@@ -15,15 +15,15 @@ import { toSignal } from '@angular/core/rxjs-interop';
     <div class="p-6 border-b border-slate-800">
       <div class="flex items-center gap-3">
         <div
-          class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-500/30"
+          class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-orange-500/30"
         >
-          S
+          B
         </div>
         <span class="font-bold text-lg tracking-wide">Bifrost</span>
       </div>
     </div>
 
-    <nav class="flex-1 p-4 space-y-2">
+    <nav class="flex-1 p-4 space-y-2 ml-2">
       <a [class]="navClass('booking')">
         <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
       </a>
