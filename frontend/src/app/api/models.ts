@@ -16,7 +16,7 @@ export interface Booking {
   roomId: string;
   title: string;
   date: string; // YYYY-MM-DD
-  startHour: number;
+  startTime: number;
   duration: number;
   type: 'busy' | 'mine' | 'pending';
   guestCount: number;

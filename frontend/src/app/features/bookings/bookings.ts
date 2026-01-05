@@ -8,8 +8,6 @@ import { ApiService } from '../../api/api.service';
 import { Router } from '@angular/router';
 import { Sidebar } from '../../components/sidebar/sidebar';
 
-export type CalendarView = 'day' | 'week';
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -22,8 +20,7 @@ export class Bookings {
   currentUser = toSignal(user(this.auth));
   router = inject(Router);
 
-  // VIEW STATE
-  calendarView = signal<CalendarView>('day');
+  // UI STATE
   selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
 
   // MODAL STATE
@@ -36,8 +33,8 @@ export class Bookings {
     title: string;
     guestCount: number;
   }>({
-    startTime: '09:00',
-    endTime: '10:00',
+    startTime: '',
+    endTime: '',
     title: '',
     guestCount: 1,
   });
@@ -56,23 +53,6 @@ export class Bookings {
   isEditing = computed(() => !!this.modalData().id);
   isSaving = signal(false);
 
-  // --- WEEK VIEW LOGIC ---
-  weekDays = computed(() => {
-    if (this.calendarView() !== 'week') return [];
-    const curr = new Date(this.selectedDate() || new Date());
-    const first = curr.getDate() - curr.getDay() + 1;
-    const days = [];
-    for (let i = 0; i < 5; i++) {
-      const next = new Date(curr);
-      next.setDate(first + i);
-      const dayName = ['Chủ Nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][
-        next.getDay()
-      ];
-      days.push({ date: next.toISOString().split('T')[0], dayName });
-    }
-    return days;
-  });
-
   constructor() {
     this.loadRooms();
   }
@@ -90,7 +70,7 @@ export class Bookings {
 
   async loadBookings() {
     try {
-      const data = await this.api.getBookings(this.selectedDate());
+      const data = await this.api.getBookings('');
       this.bookings.set(data);
     } catch (e) {
       console.error(e);
@@ -150,9 +130,9 @@ export class Bookings {
     this.modalData.set({
       id: b.id,
       title: b.title,
-      startTime: (b.startHour < 10 ? '0' : '') + b.startHour + ':00',
-      endTime: (b.startHour + b.duration < 10 ? '0' : '') + (b.startHour + b.duration) + ':00',
-      guestCount: b.guestCount || 1,
+      guestCount: b.guestCount,
+      startTime: this.minutesToTime(b.startTime),
+      endTime: this.minutesToTime(b.startTime + b.duration),
     });
     this.showModal.set(true);
   }
@@ -163,16 +143,22 @@ export class Bookings {
     const room = this.rooms().find((r) => r.name === this.selectedRoomId());
     if (!room || !data.title) return alert('Vui lòng nhập đủ thông tin');
 
-    const startH = parseInt(data.startTime.split(':')[0]);
-    const endH = parseInt(data.endTime.split(':')[0]);
-    if (startH >= endH) return alert('Giờ kết thúc không hợp lệ');
+    const [startH, startM] = data.startTime.split(':').map(Number);
+    const [endH, endM] = data.endTime.split(':').map(Number);
+
+    const startTotalMinutes = startH * 60 + startM;
+    const endTotalMinutes = endH * 60 + endM;
+
+    if (startTotalMinutes >= endTotalMinutes) {
+      return alert('Giờ kết thúc không hợp lệ');
+    }
 
     const payload = {
       roomId: room.id,
       title: data.title,
       date: this.selectedDate(),
-      startHour: startH,
-      duration: endH - startH,
+      startTime: startTotalMinutes,
+      duration: endTotalMinutes - startTotalMinutes,
       guestCount: data.guestCount,
     };
 
@@ -188,9 +174,9 @@ export class Bookings {
       this.isSaving.set(false);
       this.closeModal();
       this.loadBookings();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Lỗi khi lưu (Xem console)');
+      alert(`Lỗi khi lưu: ${e.error.message ?? 'Xem console'}`);
     }
   }
 
@@ -211,36 +197,26 @@ export class Bookings {
 
   // --- HELPERS ---
   getBookingsForRoom(rid: string) {
-    if (this.calendarView() === 'day') {
-      return this.bookings().filter((b) => b.roomId === rid && b.date === this.selectedDate());
-    } else {
-      const days = this.weekDays().map((d) => d.date);
-      return this.bookings().filter((b) => b.roomId === rid && days.includes(b.date));
-    }
+    return this.bookings().filter((b) => b.roomId === rid && b.date === this.selectedDate());
   }
-
   getBookingStyle(b: Booking) {
-    if (this.calendarView() === 'day') {
-      return { left: (b.startHour - 8) * 10, width: b.duration * 10 };
-    } else {
-      const days = this.weekDays().map((d) => d.date);
-      const dayIndex = days.indexOf(b.date);
-      return { left: dayIndex * 20, width: 20 };
-    }
-  }
+    const dayStartTime = this.timeSlots[0]; // e.g. 8
+    const dayStartMinutes = dayStartTime * 60;
 
+    const totalDayMinutes = this.timeSlots.length * 60;
+
+    const left = ((b.startTime - dayStartMinutes) / totalDayMinutes) * 100;
+
+    const width = (b.duration / totalDayMinutes) * 100;
+
+    return { left, width };
+  }
   isToday(dateStr: string) {
     return dateStr === new Date().toISOString().split('T')[0];
   }
   selectDateAndOpen(date: string, roomName: string) {
     this.selectedDate.set(date);
     this.openModal(roomName, '09:00');
-  }
-  loginWithGoogle() {
-    signInWithPopup(this.auth, new GoogleAuthProvider());
-  }
-  setCalendarView(v: CalendarView) {
-    this.calendarView.set(v);
   }
   onDateChange(d: string) {
     this.selectedDate.set(d);
@@ -262,5 +238,19 @@ export class Bookings {
   updateGuestCount(d: number) {
     const n = this.modalData().guestCount + d;
     if (n >= 1) this.modalData.update((v) => ({ ...v, guestCount: n }));
+  }
+  formatTime(totalMinutes: number): string {
+    const h = Math.floor(totalMinutes / 60)
+      .toString()
+      .padStart(2, '0');
+    const m = (totalMinutes % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
+  }
+  minutesToTime(totalMinutes: number): string {
+    const h = Math.floor(totalMinutes / 60)
+      .toString()
+      .padStart(2, '0');
+    const m = (totalMinutes % 60).toString().padStart(2, '0');
+    return `${h}:${m}`;
   }
 }

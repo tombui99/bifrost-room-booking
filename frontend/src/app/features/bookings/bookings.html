@@ -25,26 +25,6 @@
 
     <div class="flex-1 flex flex-col overflow-hidden p-6 animate-fade-in">
       <div class="flex gap-4 mb-6 items-center flex-wrap">
-        <div class="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
-          <button
-            (click)="setCalendarView('day')"
-            [class]="
-              calendarView() === 'day' ? 'bg-slate-100 text-slate-800 font-bold' : 'text-slate-500'
-            "
-            class="px-4 py-1.5 rounded text-sm transition"
-          >
-            Hôm nay
-          </button>
-          <button
-            (click)="setCalendarView('week')"
-            [class]="
-              calendarView() === 'week' ? 'bg-slate-100 text-slate-800 font-bold' : 'text-slate-500'
-            "
-            class="px-4 py-1.5 rounded text-sm transition"
-          >
-            Tuần này
-          </button>
-        </div>
         <input
           type="date"
           [ngModel]="selectedDate()"
@@ -63,25 +43,13 @@
             Phòng (Rooms)
           </div>
           <div class="flex-1 flex min-w-[800px]">
-            @if (calendarView() === 'day') { @for (hour of timeSlots; track hour) {
+            @for (hour of timeSlots; track hour) {
             <div
               class="flex-1 text-center py-4 text-xs font-bold text-gray-400 border-r border-gray-100"
             >
               {{ hour }}:00
             </div>
-            } } @else { @for (day of weekDays(); track day.date) {
-            <div
-              class="flex-1 text-center py-3 border-r border-gray-100 flex flex-col items-center justify-center"
-              [class.bg-emerald-50]="isToday(day.date)"
-            >
-              <span class="text-[10px] text-gray-400 font-bold uppercase">{{ day.dayName }}</span>
-              <span
-                class="text-sm font-bold text-slate-700"
-                [class.text-emerald-600]="isToday(day.date)"
-                >{{ day.date | date : 'dd/MM' }}</span
-              >
-            </div>
-            } }
+            }
           </div>
         </div>
 
@@ -100,7 +68,7 @@
 
             <div class="flex-1 relative">
               <div class="absolute inset-0 flex h-full">
-                @if (calendarView() === 'day') { @for(h of timeSlots; track h) {
+                @for(h of timeSlots; track h) {
                 <div
                   class="flex-1 border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative group/cell"
                   (click)="openModal(room.name, h + ':00')"
@@ -111,24 +79,12 @@
                     +
                   </div>
                 </div>
-                } } @else { @for(d of weekDays(); track d.date) {
-                <div
-                  class="flex-1 border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative group/cell"
-                  [class.bg-emerald-50_20]="isToday(d.date)"
-                  (click)="selectDateAndOpen(d.date, room.name)"
-                >
-                  <div
-                    class="hidden group-hover/cell:flex absolute inset-0 items-center justify-center text-emerald-400 font-bold opacity-50"
-                  >
-                    +
-                  </div>
-                </div>
-                } }
+                }
               </div>
 
               @for (b of getBookingsForRoom(room.id); track b.id) {
               <div
-                class="absolute top-2 bottom-2 rounded-lg p-2 text-xs text-white font-bold shadow-sm cursor-pointer hover:scale-[1.02] hover:shadow-md transition-all z-20 flex flex-col justify-center border border-white/20"
+                class="absolute top-2 bottom-2 rounded-lg p-2 text-xs text-white font-bold shadow-sm cursor-pointer transition-all z-20"
                 [class]="
                   b.createdBy === currentUser()?.uid ? 'bg-emerald-500' : 'bg-rose-400 opacity-90'
                 "
@@ -138,9 +94,7 @@
               >
                 <p class="truncate">{{ b.title }}</p>
                 <p class="text-[10px] opacity-80 font-medium">
-                  @if(calendarView() === 'day') {
-                  {{ b.startHour }}:00 - {{ b.startHour + b.duration }}:00 } @else {
-                  {{ b.startHour }}h ({{ b.duration }}h) }
+                  {{ formatTime(b.startTime) }} – {{ formatTime(b.startTime + b.duration) }}
                 </p>
               </div>
               }
@@ -244,6 +198,7 @@
               <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Bắt đầu</label
               ><input
                 type="time"
+                step="900"
                 [(ngModel)]="modalData().startTime"
                 class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
               />
@@ -252,6 +207,7 @@
               <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label
               ><input
                 type="time"
+                step="900"
                 [(ngModel)]="modalData().endTime"
                 class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
               />

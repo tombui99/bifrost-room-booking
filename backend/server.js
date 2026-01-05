@@ -103,18 +103,35 @@ app.get("/api/bookings", async (req, res) => {
 // 6. CREATE BOOKING
 app.post("/api/bookings", verifyToken, async (req, res) => {
   try {
-    const { roomId, date, startHour } = req.body;
+    const { roomId, date, startTime, duration } = req.body;
 
-    // Check conflict
-    const conflict = await db
+    if (!roomId || !date || startTime == null || !duration) {
+      return res.status(400).json({ message: "Invalid booking data" });
+    }
+
+    const newStart = startTime;
+    const newEnd = startTime + duration;
+
+    // Get all bookings for the same room & date
+    const snapshot = await db
       .collection("bookings")
       .where("roomId", "==", roomId)
       .where("date", "==", date)
-      .where("startHour", "==", startHour)
       .get();
 
-    if (!conflict.empty) {
-      return res.status(409).json({ message: "Slot already taken" });
+    // Check overlap
+    const hasConflict = snapshot.docs.some((doc) => {
+      const b = doc.data();
+      const existingStart = b.startTime;
+      const existingEnd = b.startTime + b.duration;
+
+      return existingStart < newEnd && existingEnd > newStart;
+    });
+
+    if (hasConflict) {
+      return res.status(409).json({
+        message: "Khung thời gian này bị trùng với một lịch đặt khác",
+      });
     }
 
     const newBooking = {
@@ -132,36 +149,44 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
   }
 });
 
-// 7. UPDATE BOOKING (Update) - NEW
+// 7. UPDATE BOOKING (Update)
 app.put("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
-    const { roomId, date, startHour } = req.body;
+    const { roomId, date, startTime, duration } = req.body;
     const bookingId = req.params.id;
 
-    // Check if the booking exists and belongs to user
     const docRef = db.collection("bookings").doc(bookingId);
     const doc = await docRef.get();
 
     if (!doc.exists)
       return res.status(404).json({ message: "Booking not found" });
+
     if (doc.data().createdBy !== req.user.uid)
       return res.status(403).json({ message: "Unauthorized" });
 
-    // Check for conflicts (excluding the current booking itself)
-    const conflictSnapshot = await db
+    const newStart = startTime;
+    const newEnd = startTime + duration;
+
+    const snapshot = await db
       .collection("bookings")
       .where("roomId", "==", roomId)
       .where("date", "==", date)
-      .where("startHour", "==", startHour)
       .get();
 
-    // Filter out the current booking from the conflict check
-    const isConflict = conflictSnapshot.docs.some((d) => d.id !== bookingId);
+    const hasConflict = snapshot.docs.some((d) => {
+      if (d.id === bookingId) return false;
 
-    if (isConflict) {
-      return res
-        .status(409)
-        .json({ message: "Slot already taken by another booking" });
+      const b = d.data();
+      const existingStart = b.startTime;
+      const existingEnd = b.startTime + b.duration;
+
+      return existingStart < newEnd && existingEnd > newStart;
+    });
+
+    if (hasConflict) {
+      return res.status(409).json({
+        message: "Khung thời gian này bị trùng với một lịch đặt khác",
+      });
     }
 
     await docRef.update(req.body);
