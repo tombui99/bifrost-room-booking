@@ -9,6 +9,13 @@ import { Room } from '../../api/models';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
+    @if (isLoading()) {
+    <div class="h-screen flex items-center justify-center">
+      <div class="text-emerald-600 text-3xl animate-pulse">
+        <i class="fas fa-spinner fa-spin"></i>
+      </div>
+    </div>
+    } @if(!isLoading() && rooms()) {
     <main class="relative bg-slate-50">
       <header
         class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
@@ -288,6 +295,7 @@ import { Room } from '../../api/models';
         </div>
       </div>
     </main>
+    }
   `,
   styles: [
     `
@@ -310,6 +318,7 @@ export class Rooms implements OnInit {
   // State
   rooms = signal<Room[]>([]);
   selectedRoom = signal<Room | null>(null);
+  isLoading = signal(false);
 
   ngOnInit() {
     this.loadRooms();
@@ -318,11 +327,14 @@ export class Rooms implements OnInit {
   // --- API OPERATIONS ---
 
   async loadRooms() {
+    this.isLoading.set(true);
     try {
       const data = await this.api.getRooms();
       this.rooms.set(data);
     } catch (e) {
       console.error('Error loading rooms', e);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 

@@ -1,4 +1,10 @@
-@if (rooms() && bookings()) {
+@if (isLoading()) {
+<div class="h-screen flex items-center justify-center">
+  <div class="text-emerald-600 text-3xl animate-pulse">
+    <i class="fas fa-spinner fa-spin"></i>
+  </div>
+</div>
+} @if (!isLoading() && rooms() && bookings()) {
 <main class="h-screen overflow-hidden relative bg-slate-50">
   <header
     class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
@@ -76,7 +82,7 @@
               }
             </div>
 
-            @for (b of getBookingsForRoom(room.id); track b.id) {
+            @for (b of getBookingsForRoom(room.id ?? ''); track b.id) {
             <div
               class="absolute top-2 bottom-2 rounded-lg p-2 text-xs text-white font-bold shadow-sm cursor-pointer transition-all z-20"
               [class]="

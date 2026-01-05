@@ -21,6 +21,9 @@ export class Bookings {
 
   // UI STATE
   selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
+  isEditing = computed(() => !!this.modalData().id);
+  isSaving = signal(false);
+  isLoading = signal(false);
 
   // MODAL STATE
   showModal = signal(false);
@@ -49,8 +52,6 @@ export class Bookings {
   get selectedRoom() {
     return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;
   }
-  isEditing = computed(() => !!this.modalData().id);
-  isSaving = signal(false);
 
   constructor() {
     this.loadRooms();
@@ -58,12 +59,15 @@ export class Bookings {
 
   // --- API CALLS ---
   async loadRooms() {
+    this.isLoading.set(true);
     try {
       this.rooms.set(await this.api.getRooms());
       if (this.rooms().length > 0) this.selectedRoomId.set(this.rooms()[0].name);
-      this.loadBookings();
+      await this.loadBookings();
     } catch (e) {
       console.error(e);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
