@@ -1,6 +1,6 @@
 // --- MODELS ---
 export interface Room {
-  id: string;
+  id?: string;
   name: string;
   location: string;
   capacity: string;

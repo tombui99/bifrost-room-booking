@@ -19,13 +19,6 @@ import { Room } from '../../api/models';
           <i class="fas fa-bars"></i>
         </div>
         <h2 class="text-xl font-bold text-slate-800 hidden md:block">Quản lý phòng</h2>
-        <div class="flex gap-4">
-          <button
-            class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md flex items-center gap-2 active:scale-95"
-          >
-            <i class="fas fa-plus"></i> <span class="hidden sm:inline">Tạo Mới</span>
-          </button>
-        </div>
       </header>
       <div class="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
         <div class="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0">
@@ -381,15 +374,16 @@ export class Rooms implements OnInit {
 
   selectNewRoom() {
     // Initialize blank template matching schema
-    // this.selectedRoom.set({
-    //   name: '',
-    //   location: '',
-    //   capacity: '',
-    //   maxCapacity: 10,
-    //   description: '',
-    //   amenities: [],
-    //   images: [],
-    // });
+    this.selectedRoom.set({
+      name: '',
+      location: '',
+      capacity: '',
+      maxCapacity: 10,
+      description: '',
+      amenities: [],
+      images: [],
+      icon: '',
+    });
   }
 
   // Amenities Helper
