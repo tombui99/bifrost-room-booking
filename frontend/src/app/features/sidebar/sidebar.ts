@@ -24,9 +24,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
     </div>
 
     <nav class="flex-1 p-4 space-y-2 ml-2">
-      <a routerLink="/bookings" routerLinkActive="text-emerald-500 font-bold">
-        <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
-      </a>
+      <div class="grid grid-cols-1 gap-y-5">
+        <a routerLink="/bookings" routerLinkActive="text-emerald-500 font-bold">
+          <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
+        </a>
+        <a routerLink="/rooms" routerLinkActive="text-emerald-500 font-bold">
+          <i class="fas fa-building w-5"></i> <span>Quản Lý Phòng</span>
+        </a>
+      </div>
     </nav>
 
     <div class="p-4 border-t border-slate-800 relative">

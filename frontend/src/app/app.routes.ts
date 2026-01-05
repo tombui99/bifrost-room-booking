@@ -1,20 +1,21 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+import { Bookings } from './features/bookings/bookings';
+import { Rooms } from './features/rooms/rooms';
+import { MainLayoutComponent } from './main-layout';
 
 export const routes: Routes = [
   {
     path: '',
-    loadComponent: () => import('./features/bookings/bookings').then((m) => m.Bookings),
-    canActivate: [authGuard],
-  },
-  {
-    path: 'bookings',
-    loadComponent: () => import('./features/bookings/bookings').then((m) => m.Bookings),
+    component: MainLayoutComponent,
+    children: [
+      { path: 'bookings', component: Bookings },
+      { path: 'rooms', component: Rooms },
+    ],
     canActivate: [authGuard],
   },
   {
     path: 'login',
     loadComponent: () => import('./auth/components/login').then((m) => m.Login),
   },
-  { path: '**', redirectTo: '' },
 ];

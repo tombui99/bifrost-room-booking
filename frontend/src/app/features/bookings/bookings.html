@@ -1,282 +1,275 @@
-<div
-  class="flex h-screen overflow-hidden bg-slate-50 text-slate-800 font-sans selection:bg-emerald-100"
->
-  <app-sidebar />
-  @if (rooms() && bookings()) {
-  <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
-    <header
-      class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
+@if (rooms() && bookings()) {
+<main class="h-screen overflow-hidden relative bg-slate-50">
+  <header
+    class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
+  >
+    <div class="md:hidden text-slate-500 text-xl cursor-pointer hover:text-emerald-600 transition">
+      <i class="fas fa-bars"></i>
+    </div>
+    <h2 class="text-xl font-bold text-slate-800 hidden md:block">{{ 'Lịch đặt phòng' }}</h2>
+    <div class="flex gap-4">
+      <button
+        (click)="openModal()"
+        class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md flex items-center gap-2 active:scale-95"
+      >
+        <i class="fas fa-plus"></i> <span class="hidden sm:inline">Tạo Mới</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="flex-1 flex flex-col overflow-hidden p-6 animate-fade-in">
+    <div class="flex gap-4 mb-6 items-center flex-wrap">
+      <input
+        type="date"
+        [ngModel]="selectedDate()"
+        (ngModelChange)="onDateChange($event)"
+        class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm hover:border-emerald-400 transition-colors"
+      />
+    </div>
+
+    <div
+      class="bg-white rounded-xl shadow-lg border border-gray-200 flex-1 overflow-hidden flex flex-col relative"
     >
-      <div
-        class="md:hidden text-slate-500 text-xl cursor-pointer hover:text-emerald-600 transition"
-      >
-        <i class="fas fa-bars"></i>
-      </div>
-      <h2 class="text-xl font-bold text-slate-800 hidden md:block">{{ 'Lịch đặt phòng' }}</h2>
-      <div class="flex gap-4">
-        <button
-          (click)="openModal()"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all hover:shadow-md flex items-center gap-2 active:scale-95"
+      <div class="flex border-b border-gray-200 bg-slate-50 shrink-0">
+        <div
+          class="w-56 p-4 font-bold text-gray-500 text-xs uppercase tracking-wider border-r border-gray-200 sticky left-0 z-10 bg-slate-50 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.1)] flex items-center"
         >
-          <i class="fas fa-plus"></i> <span class="hidden sm:inline">Tạo Mới</span>
-        </button>
-      </div>
-    </header>
-
-    <div class="flex-1 flex flex-col overflow-hidden p-6 animate-fade-in">
-      <div class="flex gap-4 mb-6 items-center flex-wrap">
-        <input
-          type="date"
-          [ngModel]="selectedDate()"
-          (ngModelChange)="onDateChange($event)"
-          class="border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm hover:border-emerald-400 transition-colors"
-        />
-      </div>
-
-      <div
-        class="bg-white rounded-xl shadow-lg border border-gray-200 flex-1 overflow-hidden flex flex-col relative"
-      >
-        <div class="flex border-b border-gray-200 bg-slate-50 shrink-0">
+          Phòng (Rooms)
+        </div>
+        <div class="flex-1 flex min-w-[800px]">
+          @for (hour of timeSlots; track hour) {
           <div
-            class="w-56 p-4 font-bold text-gray-500 text-xs uppercase tracking-wider border-r border-gray-200 sticky left-0 z-10 bg-slate-50 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.1)] flex items-center"
+            class="flex-1 text-center py-4 text-xs font-bold text-gray-400 border-r border-gray-100"
           >
-            Phòng (Rooms)
+            {{ hour }}:00
           </div>
-          <div class="flex-1 flex min-w-[800px]">
-            @for (hour of timeSlots; track hour) {
+          }
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-auto relative custom-scrollbar">
+        @for (room of rooms(); track room.id) {
+        <div
+          class="flex min-w-[800px] border-b border-gray-100 h-28 relative hover:bg-slate-50 transition group"
+        >
+          <div
+            class="w-56 p-4 border-r border-emerald-500 sticky left-0 z-10 bg-white border-l-4 group-hover:bg-slate-50 transition-colors cursor-pointer"
+            (click)="openModal(room.name)"
+          >
+            <p class="font-bold text-sm text-slate-800">{{ room.name }}</p>
+            <p class="text-xs text-slate-500 mt-1 truncate">{{ room.location }}</p>
+          </div>
+
+          <div class="flex-1 relative">
+            <div class="absolute inset-0 flex h-full">
+              @for(h of timeSlots; track h) {
+              <div
+                class="flex-1 border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative"
+                (click)="openModal(room.name, h + ':00')"
+              >
+                <div
+                  class="absolute inset-0 flex items-center justify-center text-emerald-400 font-bold opacity-50 pointer-events-none"
+                >
+                  +
+                </div>
+              </div>
+              }
+            </div>
+
+            @for (b of getBookingsForRoom(room.id); track b.id) {
             <div
-              class="flex-1 text-center py-4 text-xs font-bold text-gray-400 border-r border-gray-100"
+              class="absolute top-2 bottom-2 rounded-lg p-2 text-xs text-white font-bold shadow-sm cursor-pointer transition-all z-20"
+              [class]="
+                b.createdBy === currentUser()?.uid ? 'bg-emerald-500' : 'bg-rose-400 opacity-90'
+              "
+              [style.left.%]="getBookingStyle(b).left"
+              [style.width.%]="getBookingStyle(b).width"
+              (click)="$event.stopPropagation(); editBooking(b)"
             >
-              {{ hour }}:00
+              <p class="truncate">{{ b.title }}</p>
+              <p class="text-[10px] opacity-80 font-medium">
+                {{ formatTime(b.startTime) }} – {{ formatTime(b.startTime + b.duration) }}
+              </p>
             </div>
             }
           </div>
         </div>
-
-        <div class="flex-1 overflow-auto relative custom-scrollbar">
-          @for (room of rooms(); track room.id) {
+        }
+      </div>
+    </div>
+  </div>
+</main>
+} @if (showModal()) {
+<div
+  class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-scale-in"
+  (click)="closeModal()"
+>
+  <div
+    class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[85vh] relative"
+    (click)="$event.stopPropagation()"
+  >
+    <div
+      class="w-full md:w-5/12 text-white flex flex-col relative bg-slate-800 h-full overflow-y-auto custom-scrollbar"
+    >
+      <div class="relative h-64 md:h-[45%] w-full shrink-0 overflow-hidden bg-black group">
+        <img
+          [src]="selectedRoom?.images?.[currentImageIndex()] ?? 'https://fastly.picsum.photos/id/10/2500/1667.jpg?hmac=J04WWC_ebchx3WwzbM-Z4_KC_LeLBWr5LZMaAkWkF68'"
+          class="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
+        />
+        <div
+          class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"
+        ></div>
+        <button
+          (click)="prevImage($event)"
+          class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button
+          (click)="nextImage($event)"
+          class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+          @for (img of selectedRoom?.images; track $index) {
           <div
-            class="flex min-w-[800px] border-b border-gray-100 h-28 relative hover:bg-slate-50 transition group"
-          >
-            <div
-              class="w-56 p-4 border-r border-emerald-500 sticky left-0 z-10 bg-white border-l-4 group-hover:bg-slate-50 transition-colors cursor-pointer"
-              (click)="openModal(room.name)"
-            >
-              <p class="font-bold text-sm text-slate-800">{{ room.name }}</p>
-              <p class="text-xs text-slate-500 mt-1 truncate">{{ room.location }}</p>
-            </div>
-
-            <div class="flex-1 relative">
-              <div class="absolute inset-0 flex h-full">
-                @for(h of timeSlots; track h) {
-                <div
-                  class="flex-1 border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative group/cell"
-                  (click)="openModal(room.name, h + ':00')"
-                >
-                  <div
-                    class="hidden group-hover/cell:flex absolute inset-0 items-center justify-center text-emerald-400 font-bold opacity-50"
-                  >
-                    +
-                  </div>
-                </div>
-                }
-              </div>
-
-              @for (b of getBookingsForRoom(room.id); track b.id) {
-              <div
-                class="absolute top-2 bottom-2 rounded-lg p-2 text-xs text-white font-bold shadow-sm cursor-pointer transition-all z-20"
-                [class]="
-                  b.createdBy === currentUser()?.uid ? 'bg-emerald-500' : 'bg-rose-400 opacity-90'
-                "
-                [style.left.%]="getBookingStyle(b).left"
-                [style.width.%]="getBookingStyle(b).width"
-                (click)="$event.stopPropagation(); editBooking(b)"
-              >
-                <p class="truncate">{{ b.title }}</p>
-                <p class="text-[10px] opacity-80 font-medium">
-                  {{ formatTime(b.startTime) }} – {{ formatTime(b.startTime + b.duration) }}
-                </p>
-              </div>
-              }
-            </div>
-          </div>
+            class="w-1.5 h-1.5 rounded-full transition-all"
+            [ngClass]="$index === currentImageIndex() ? 'bg-white' : 'bg-white/30'"
+          ></div>
           }
+        </div>
+      </div>
+      <div class="p-6 flex-1 flex flex-col">
+        <h2 class="text-2xl font-bold mb-2">{{ selectedRoom?.name }}</h2>
+        <p class="text-sm text-slate-300 mb-6">{{ selectedRoom?.description }}</p>
+        <div class="grid grid-cols-2 gap-3 mt-auto mb-4">
+          <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+            <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Capacity</p>
+            <span class="font-bold">{{ selectedRoom?.maxCapacity }} People</span>
+          </div>
         </div>
       </div>
     </div>
-  </main>
-  } @if (showModal()) {
-  <div
-    class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-scale-in"
-    (click)="closeModal()"
-  >
-    <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[85vh] relative"
-      (click)="$event.stopPropagation()"
-    >
+
+    <div class="w-full md:w-7/12 bg-white flex flex-col h-full overflow-hidden relative">
       <div
-        class="w-full md:w-5/12 text-white flex flex-col relative bg-slate-800 h-full overflow-y-auto custom-scrollbar"
+        class="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0"
       >
-        <div class="relative h-64 md:h-[45%] w-full shrink-0 overflow-hidden bg-black group">
-          <img
-            [src]="selectedRoom?.images?.[currentImageIndex()] ?? 'https://fastly.picsum.photos/id/10/2500/1667.jpg?hmac=J04WWC_ebchx3WwzbM-Z4_KC_LeLBWr5LZMaAkWkF68'"
-            class="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
-          />
-          <div
-            class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"
-          ></div>
-          <button
-            (click)="prevImage($event)"
-            class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
+        <h3 class="font-bold text-slate-800">
+          {{ isEditing() ? 'Cập Nhật Lịch' : 'Đặt Lịch Mới' }}
+          <span class="text-slate-400 text-sm font-normal ml-2">{{
+            selectedDate() | date : 'dd/MM/yyyy'
+          }}</span>
+        </h3>
+        <button (click)="closeModal()" class="text-slate-400 hover:text-red-500 transition px-2">
+          <i class="fas fa-times text-lg"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Chọn Phòng</label
+          ><select
+            [(ngModel)]="selectedRoomId"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white font-bold text-slate-800 cursor-pointer"
           >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          <button
-            (click)="nextImage($event)"
-            class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-white/20 text-white flex items-center justify-center backdrop-blur-sm transition opacity-0 group-hover:opacity-100"
-          >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-            @for (img of selectedRoom?.images; track $index) {
-            <div
-              class="w-1.5 h-1.5 rounded-full transition-all"
-              [ngClass]="$index === currentImageIndex() ? 'bg-white' : 'bg-white/30'"
-            ></div>
+            @for (r of rooms(); track r.id) {
+            <option [value]="r.name">{{ r.name }}</option>
             }
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Chủ đề</label
+          ><input
+            type="text"
+            [(ngModel)]="modalData().title"
+            class="w-full border border-slate-300 rounded-xl px-4 py-3"
+          />
+        </div>
+        <div class="grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Bắt đầu</label
+            ><input
+              type="time"
+              step="900"
+              [(ngModel)]="modalData().startTime"
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
+            />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label
+            ><input
+              type="time"
+              step="900"
+              [(ngModel)]="modalData().endTime"
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
+            />
           </div>
         </div>
-        <div class="p-6 flex-1 flex flex-col">
-          <h2 class="text-2xl font-bold mb-2">{{ selectedRoom?.name }}</h2>
-          <p class="text-sm text-slate-300 mb-6">{{ selectedRoom?.description }}</p>
-          <div class="grid grid-cols-2 gap-3 mt-auto mb-4">
-            <div class="bg-white/5 rounded-lg p-3 border border-white/5">
-              <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Capacity</p>
-              <span class="font-bold">{{ selectedRoom?.maxCapacity }} People</span>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Khách</label>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center border border-slate-300 rounded-xl bg-white">
+              <button
+                (click)="updateGuestCount(-1)"
+                class="px-4 py-3 hover:bg-slate-100 border-r border-slate-300"
+              >
+                <i class="fas fa-minus"></i></button
+              ><input
+                type="number"
+                [(ngModel)]="modalData().guestCount"
+                class="w-16 text-center outline-none font-bold"
+                readonly
+              /><button
+                (click)="updateGuestCount(1)"
+                class="px-4 py-3 hover:bg-slate-100 border-l border-slate-300"
+              >
+                <i class="fas fa-plus"></i>
+              </button>
             </div>
+            <span class="text-xs font-medium">Max: {{ selectedRoom?.maxCapacity }}</span>
           </div>
         </div>
       </div>
 
-      <div class="w-full md:w-7/12 bg-white flex flex-col h-full overflow-hidden relative">
-        <div
-          class="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 shrink-0"
+      <div class="p-4 border-t border-gray-100 bg-white flex justify-between items-center gap-3">
+        @if(isEditing()) {
+        <button
+          (click)="deleteCurrentBooking()"
+          class="text-red-500 font-bold hover:bg-red-50 px-4 py-3 rounded-xl transition"
         >
-          <h3 class="font-bold text-slate-800">
-            {{ isEditing() ? 'Cập Nhật Lịch' : 'Đặt Lịch Mới' }}
-            <span class="text-slate-400 text-sm font-normal ml-2">{{
-              selectedDate() | date : 'dd/MM/yyyy'
-            }}</span>
-          </h3>
-          <button (click)="closeModal()" class="text-slate-400 hover:text-red-500 transition px-2">
-            <i class="fas fa-times text-lg"></i>
-          </button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Chọn Phòng</label
-            ><select
-              [(ngModel)]="selectedRoomId"
-              class="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white font-bold text-slate-800 cursor-pointer"
-            >
-              @for (r of rooms(); track r.id) {
-              <option [value]="r.name">{{ r.name }}</option>
-              }
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Chủ đề</label
-            ><input
-              type="text"
-              [(ngModel)]="modalData().title"
-              class="w-full border border-slate-300 rounded-xl px-4 py-3"
-            />
-          </div>
-          <div class="grid grid-cols-2 gap-6">
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Bắt đầu</label
-              ><input
-                type="time"
-                step="900"
-                [(ngModel)]="modalData().startTime"
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label
-              ><input
-                type="time"
-                step="900"
-                [(ngModel)]="modalData().endTime"
-                class="w-full border border-slate-300 rounded-xl px-4 py-3 cursor-pointer"
-              />
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Khách</label>
-            <div class="flex items-center gap-4">
-              <div class="flex items-center border border-slate-300 rounded-xl bg-white">
-                <button
-                  (click)="updateGuestCount(-1)"
-                  class="px-4 py-3 hover:bg-slate-100 border-r border-slate-300"
-                >
-                  <i class="fas fa-minus"></i></button
-                ><input
-                  type="number"
-                  [(ngModel)]="modalData().guestCount"
-                  class="w-16 text-center outline-none font-bold"
-                  readonly
-                /><button
-                  (click)="updateGuestCount(1)"
-                  class="px-4 py-3 hover:bg-slate-100 border-l border-slate-300"
-                >
-                  <i class="fas fa-plus"></i>
-                </button>
-              </div>
-              <span class="text-xs font-medium">Max: {{ selectedRoom?.maxCapacity }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="p-4 border-t border-gray-100 bg-white flex justify-between items-center gap-3">
-          @if(isEditing()) {
+          <i class="far fa-trash-alt mr-2"></i> Xóa
+        </button>
+        } @else {
+        <div></div>
+        }
+        <div class="flex gap-3">
           <button
-            (click)="deleteCurrentBooking()"
-            class="text-red-500 font-bold hover:bg-red-50 px-4 py-3 rounded-xl transition"
+            (click)="closeModal()"
+            class="px-6 py-3 rounded-xl border border-gray-200 text-slate-600 font-bold hover:bg-gray-50"
           >
-            <i class="far fa-trash-alt mr-2"></i> Xóa
+            Hủy
+          </button>
+          @if(!isSaving()) {
+          <button
+            (click)="confirmBooking()"
+            class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"
+          >
+            <span>{{ isEditing() ? 'Lưu Thay Đổi' : 'Xác Nhận' }}</span
+            ><i class="fas fa-arrow-right"></i>
           </button>
           } @else {
-          <div></div>
+          <button
+            disabled
+            class="bg-emerald-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center gap-2 cursor-not-allowed"
+          >
+            <span>Đang Lưu...</span><i class="fas fa-spinner fa-spin"></i>
+          </button>
           }
-          <div class="flex gap-3">
-            <button
-              (click)="closeModal()"
-              class="px-6 py-3 rounded-xl border border-gray-200 text-slate-600 font-bold hover:bg-gray-50"
-            >
-              Hủy
-            </button>
-            @if(!isSaving()) {
-            <button
-              (click)="confirmBooking()"
-              class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"
-            >
-              <span>{{ isEditing() ? 'Lưu Thay Đổi' : 'Xác Nhận' }}</span
-              ><i class="fas fa-arrow-right"></i>
-            </button>
-            } @else {
-            <button
-              disabled
-              class="bg-emerald-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center gap-2 cursor-not-allowed"
-            >
-              <span>Đang Lưu...</span><i class="fas fa-spinner fa-spin"></i>
-            </button>
-            }
-          </div>
         </div>
       </div>
     </div>
   </div>
-  }
 </div>
+}

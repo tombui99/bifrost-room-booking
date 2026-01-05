@@ -1,17 +1,16 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Auth, GoogleAuthProvider, signInWithPopup, signOut, user } from '@angular/fire/auth';
+import { Auth, user } from '@angular/fire/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
 import { Router } from '@angular/router';
-import { Sidebar } from '../../components/sidebar/sidebar';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, Sidebar],
+  imports: [CommonModule, FormsModule],
   templateUrl: 'bookings.html',
 })
 export class Bookings {
@@ -72,25 +71,6 @@ export class Bookings {
     try {
       const data = await this.api.getBookings('');
       this.bookings.set(data);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  // --- ROOM CRUD (Placeholder for Future Admin UI) ---
-  async createRoom(room: Partial<Room>) {
-    try {
-      await this.api.createRoom(room);
-      this.loadRooms();
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  async deleteRoom(id: string) {
-    if (!confirm('Xóa phòng này?')) return;
-    try {
-      await this.api.deleteRoom(id);
-      this.loadRooms();
     } catch (e) {
       console.error(e);
     }
@@ -176,6 +156,7 @@ export class Bookings {
       this.loadBookings();
     } catch (e: any) {
       console.error(e);
+      this.isSaving.set(false);
       alert(`Lỗi khi lưu: ${e.error.message ?? 'Xem console'}`);
     }
   }
