@@ -2,6 +2,7 @@
   class="flex h-screen overflow-hidden bg-slate-50 text-slate-800 font-sans selection:bg-emerald-100"
 >
   <app-sidebar />
+  @if (rooms() && bookings()) {
   <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-slate-50">
     <header
       class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
@@ -85,7 +86,7 @@
         </div>
 
         <div class="flex-1 overflow-auto relative custom-scrollbar">
-          @for (room of rooms; track room.id) {
+          @for (room of rooms(); track room.id) {
           <div
             class="flex min-w-[800px] border-b border-gray-100 h-28 relative hover:bg-slate-50 transition group"
           >
@@ -151,8 +152,7 @@
       </div>
     </div>
   </main>
-
-  @if (showModal()) {
+  } @if (showModal()) {
   <div
     class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-scale-in"
     (click)="closeModal()"
@@ -166,7 +166,7 @@
       >
         <div class="relative h-64 md:h-[45%] w-full shrink-0 overflow-hidden bg-black group">
           <img
-            [src]="selectedRoom?.images?.[currentImageIndex()]"
+            [src]="selectedRoom?.images?.[currentImageIndex()] ?? 'https://fastly.picsum.photos/id/10/2500/1667.jpg?hmac=J04WWC_ebchx3WwzbM-Z4_KC_LeLBWr5LZMaAkWkF68'"
             class="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
           />
           <div
@@ -201,10 +201,6 @@
               <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Capacity</p>
               <span class="font-bold">{{ selectedRoom?.maxCapacity }} People</span>
             </div>
-            <div class="bg-white/5 rounded-lg p-3 border border-white/5">
-              <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Equipment</p>
-              <span class="font-bold">High-speed Wifi</span>
-            </div>
           </div>
         </div>
       </div>
@@ -231,7 +227,7 @@
               [(ngModel)]="selectedRoomId"
               class="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white font-bold text-slate-800 cursor-pointer"
             >
-              @for (r of rooms; track r.id) {
+              @for (r of rooms(); track r.id) {
               <option [value]="r.name">{{ r.name }}</option>
               }
             </select>

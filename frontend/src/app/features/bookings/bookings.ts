@@ -46,12 +46,12 @@ export class Bookings {
   selectedRoomId = signal('');
 
   // DATA
-  rooms: Room[] = [];
+  rooms = signal<Room[]>([]);
   bookings = signal<Booking[]>([]);
   timeSlots = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
   get selectedRoom() {
-    return this.rooms.find((r) => r.name === this.selectedRoomId()) || null;
+    return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;
   }
   isEditing = computed(() => !!this.modalData().id);
 
@@ -79,8 +79,8 @@ export class Bookings {
   // --- API CALLS ---
   async loadRooms() {
     try {
-      this.rooms = await this.api.getRooms();
-      if (this.rooms.length > 0) this.selectedRoomId.set(this.rooms[0].name);
+      this.rooms.set(await this.api.getRooms());
+      if (this.rooms().length > 0) this.selectedRoomId.set(this.rooms()[0].name);
       this.loadBookings();
     } catch (e) {
       console.error(e);
@@ -142,7 +142,7 @@ export class Bookings {
     if (b.createdBy !== this.currentUser()?.uid) {
       return alert('Bạn chỉ có thể chỉnh sửa booking của mình.');
     }
-    this.selectedRoomId.set(this.rooms.find((r) => r.id === b.roomId)?.name || '');
+    this.selectedRoomId.set(this.rooms().find((r) => r.id === b.roomId)?.name || '');
     this.currentImageIndex.set(0);
 
     // Pre-fill data
@@ -159,7 +159,7 @@ export class Bookings {
   // 3. SAVE (Create OR Update)
   async confirmBooking() {
     const data = this.modalData();
-    const room = this.rooms.find((r) => r.name === this.selectedRoomId());
+    const room = this.rooms().find((r) => r.name === this.selectedRoomId());
     if (!room || !data.title) return alert('Vui lòng nhập đủ thông tin');
 
     const startH = parseInt(data.startTime.split(':')[0]);
