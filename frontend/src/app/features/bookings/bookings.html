@@ -148,6 +148,14 @@
             <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Capacity</p>
             <span class="font-bold">{{ selectedRoom?.maxCapacity }} People</span>
           </div>
+          @if(selectedRoom?.amenities?.length) {
+          <div class="bg-white/5 rounded-lg p-3 border border-white/5">
+            <p class="text-[10px] opacity-60 uppercase font-bold mb-1">Amenities</p>
+            <span class="font-bold">
+              {{ selectedRoom?.amenities?.join(', ') }}
+            </span>
+          </div>
+          }
         </div>
       </div>
     </div>
