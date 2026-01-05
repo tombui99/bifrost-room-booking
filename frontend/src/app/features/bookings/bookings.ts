@@ -54,6 +54,7 @@ export class Bookings {
     return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;
   }
   isEditing = computed(() => !!this.modalData().id);
+  isSaving = signal(false);
 
   // --- WEEK VIEW LOGIC ---
   weekDays = computed(() => {
@@ -176,6 +177,7 @@ export class Bookings {
     };
 
     try {
+      this.isSaving.set(true);
       if (data.id) {
         // UPDATE
         await this.api.updateBooking(data.id, payload);
@@ -183,6 +185,7 @@ export class Bookings {
         // CREATE
         await this.api.createBooking(payload);
       }
+      this.isSaving.set(false);
       this.closeModal();
       this.loadBookings();
     } catch (e) {

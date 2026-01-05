@@ -6,7 +6,6 @@ export interface Room {
   capacity: string;
   maxCapacity: number;
   icon: string;
-  colorBorder: string;
   description: string;
   amenities: string[];
   images: string[];

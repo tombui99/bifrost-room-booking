@@ -2,13 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { signOut } from 'firebase/auth';
 import { Auth, user } from '@angular/fire/auth';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   template: ` <aside
     class="w-64 bg-slate-900 text-white flex flex-col hidden md:flex shrink-0 transition-all duration-300 shadow-xl z-20 relative h-screen overflow-hidden"
   >
@@ -24,7 +24,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     </div>
 
     <nav class="flex-1 p-4 space-y-2 ml-2">
-      <a [class]="navClass('booking')">
+      <a routerLink="/bookings" routerLinkActive="text-emerald-500 font-bold">
         <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
       </a>
     </nav>
@@ -71,11 +71,6 @@ export class Sidebar {
 
   showProfileMenu = signal(false);
   currentUser = toSignal(user(this.auth));
-
-  navClass(v: any) {
-    // TODO: currentView should check if current route is active ('nav-item')
-    return 'nav-item active';
-  }
 
   toggleProfile(e: Event) {
     e.stopPropagation();

@@ -91,8 +91,7 @@
             class="flex min-w-[800px] border-b border-gray-100 h-28 relative hover:bg-slate-50 transition group"
           >
             <div
-              class="w-56 p-4 border-r border-gray-200 sticky left-0 z-10 bg-white border-l-4 group-hover:bg-slate-50 transition-colors cursor-pointer"
-              [ngClass]="room.colorBorder"
+              class="w-56 p-4 border-r border-emerald-500 sticky left-0 z-10 bg-white border-l-4 group-hover:bg-slate-50 transition-colors cursor-pointer"
               (click)="openModal(room.name)"
             >
               <p class="font-bold text-sm text-slate-800">{{ room.name }}</p>
@@ -302,6 +301,7 @@
             >
               Hủy
             </button>
+            @if(!isSaving()) {
             <button
               (click)="confirmBooking()"
               class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center gap-2"
@@ -309,6 +309,14 @@
               <span>{{ isEditing() ? 'Lưu Thay Đổi' : 'Xác Nhận' }}</span
               ><i class="fas fa-arrow-right"></i>
             </button>
+            } @else {
+            <button
+              disabled
+              class="bg-emerald-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg flex items-center gap-2 cursor-not-allowed"
+            >
+              <span>Đang Lưu...</span><i class="fas fa-spinner fa-spin"></i>
+            </button>
+            }
           </div>
         </div>
       </div>
