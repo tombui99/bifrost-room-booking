@@ -11,7 +11,8 @@ export class ApiService {
   private auth = inject(Auth);
 
   // Ensure this matches your backend port (usually 3000)
-  private apiUrl = 'http://localhost:3000/api';
+  // private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = 'https://bifrost-room-booking-backend.fly.dev/api';
 
   // Observable of the current user state
   user$ = user(this.auth);
@@ -79,5 +80,14 @@ export class ApiService {
   async deleteBooking(id: string) {
     const options = await this.getHeaders();
     return firstValueFrom(this.http.delete(`${this.apiUrl}/bookings/${id}`, options));
+  }
+
+  // ==========================================
+  // 3. DASHBOARD STATS
+  // ==========================================
+
+  // READ: Get dashboard statistics
+  async getDashboardStats() {
+    return firstValueFrom(this.http.get<any[]>(`${this.apiUrl}/dashboard/stats`));
   }
 }

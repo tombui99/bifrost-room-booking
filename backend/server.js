@@ -212,5 +212,96 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
   }
 });
 
+// --- DASHBOARD STATS ---
+app.get("/api/dashboard/stats", async (req, res) => {
+  try {
+    const roomsSnapshot = await db.collection("rooms").get();
+    const bookingsSnapshot = await db.collection("bookings").get();
+
+    const rooms = roomsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+    const allBookings = bookingsSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
+    const currentTime = now.getHours() + now.getMinutes() / 60;
+
+    // 1. Calculate Live Stats for Cards
+    const activeBookings = allBookings.filter(
+      (b) =>
+        b.date === todayStr &&
+        currentTime >= b.startTime &&
+        currentTime <= b.startTime + b.duration
+    );
+
+    const bookedRoomIds = activeBookings.map((b) => b.roomId);
+
+    // 2. Prepare Data for Charts
+    const roomUsageMap = {};
+    const userActivityMap = {};
+
+    rooms.forEach((r) => (roomUsageMap[r.name || r.id] = 0));
+
+    allBookings.forEach((b) => {
+      // Room Usage (for Bar Chart)
+      const room = rooms.find((r) => r.id === b.roomId);
+      if (room) {
+        const name = room.name || room.id;
+        roomUsageMap[name]++;
+      }
+      // User Activity (for Pie Chart)
+      userActivityMap[b.creatorEmail] =
+        (userActivityMap[b.creatorEmail] || 0) + 1;
+    });
+
+    // 3. Calculate 7-Day Trend
+    const last7Days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      last7Days.push(d.toISOString().split("T")[0]);
+    }
+
+    const trendData = last7Days.map((dateStr) => {
+      const count = allBookings.filter((b) => b.date === dateStr).length;
+      return { date: dateStr, count };
+    });
+
+    res.json({
+      summary: {
+        totalRooms: rooms.length,
+        currentlyBooked: bookedRoomIds.length,
+        currentlyAvailable: rooms.length - bookedRoomIds.length,
+        activeUsers: [...new Set(activeBookings.map((b) => b.creatorEmail))]
+          .length,
+      },
+      charts: {
+        roomUsage: {
+          labels: Object.keys(roomUsageMap),
+          data: Object.values(roomUsageMap),
+        },
+        topUsers: {
+          labels: Object.keys(userActivityMap).slice(0, 5),
+          data: Object.values(userActivityMap).slice(0, 5),
+        },
+        trend: {
+          labels: trendData.map((d) => d.date),
+          data: trendData.map((d) => d.count),
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});

@@ -17,16 +17,6 @@ import { Room } from '../../api/models';
     </div>
     } @if(!isLoading() && rooms()) {
     <main class="relative bg-slate-50">
-      <header
-        class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm"
-      >
-        <div
-          class="md:hidden text-slate-500 text-xl cursor-pointer hover:text-emerald-600 transition"
-        >
-          <i class="fas fa-bars"></i>
-        </div>
-        <h2 class="text-xl font-bold text-slate-800 hidden md:block">Quản lý phòng</h2>
-      </header>
       <div class="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
         <div class="w-80 bg-white border-r border-slate-200 flex flex-col shrink-0">
           <div class="p-6 border-b border-slate-100">
