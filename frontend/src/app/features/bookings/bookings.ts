@@ -73,7 +73,7 @@ export class Bookings {
 
   async loadBookings() {
     try {
-      const data = await this.api.getBookings('');
+      const data = await this.api.getBookings(this.selectedDate());
       this.bookings.set(data);
     } catch (e) {
       console.error(e);
