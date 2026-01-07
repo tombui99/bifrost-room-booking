@@ -25,9 +25,9 @@ type RoomState = 'free' | 'busy';
           <div class="flex justify-between items-start z-10">
             <div>
               <div
-                class="bg-black/20 backdrop-blur px-3 py-1 rounded-full text-xs font-bold inline-block mb-2"
+                class="bg-black/10 backdrop-blur px-3 py-1 rounded-lg text-xs font-bold inline-block mb-2"
               >
-                <i class="fas fa-cube mr-1"></i> {{ roomId() }}
+                <img src="/assets/bifrost-logo.png" alt="Bifrost Logo" class="h-12 object-cover" />
               </div>
               <h1 class="text-4xl font-bold leading-tight">
                 {{ roomInfo() ? roomInfo()?.name : 'Loading Room...' }}
