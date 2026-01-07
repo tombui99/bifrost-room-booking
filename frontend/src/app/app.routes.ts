@@ -5,6 +5,7 @@ import { Rooms } from './features/rooms/rooms';
 import { MainLayoutComponent } from './main-layout';
 import { Dashboard } from './features/dashboard/dashboard';
 import { Login } from './auth/components/login';
+import { adminGuard } from './auth/admin.guard';
 
 export const routes: Routes = [
   {
@@ -14,7 +15,12 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: Dashboard, title: 'Dashboard' },
       { path: 'bookings', component: Bookings, title: 'Đặt Phòng' },
-      { path: 'rooms', component: Rooms, title: 'Quản Lý Phòng' },
+      {
+        path: 'rooms',
+        component: Rooms,
+        title: 'Quản Lý Phòng',
+        canActivate: [adminGuard],
+      },
     ],
     canActivate: [authGuard],
   },

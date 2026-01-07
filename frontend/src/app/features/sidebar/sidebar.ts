@@ -4,6 +4,7 @@ import { signOut } from 'firebase/auth';
 import { Auth, user } from '@angular/fire/auth';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { AdminService } from '../../auth/admin.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -37,7 +38,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
               routerLinkActive="text-orange-500 font-bold"
               class="flex items-center gap-3"
             >
-              <i class="fas fa-calendar-alt w-5"></i> <span>Dashboard</span>
+              <i class="fas fa-chart-line w-5"></i> <span>Dashboard</span>
             </a>
             <a
               routerLink="/bookings"
@@ -46,6 +47,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
             >
               <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
             </a>
+            @if (adminService.isAdmin$ | async) {
             <a
               routerLink="/rooms"
               routerLinkActive="text-orange-500 font-bold"
@@ -53,6 +55,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
             >
               <i class="fas fa-building w-5"></i> <span>Quản Lý Phòng</span>
             </a>
+            }
           </div>
         </nav>
 
@@ -97,12 +100,17 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class Sidebar {
   auth = inject(Auth);
   router = inject(Router);
+  adminService = inject(AdminService);
 
   @Input() isOpen = true;
   @Output() toggleSidebar = new EventEmitter<void>();
 
   showProfileMenu = signal(false);
   currentUser = toSignal(user(this.auth));
+
+  constructor() {
+    this.adminService.checkAdmin();
+  }
 
   toggleProfile(e: Event) {
     e.stopPropagation();
