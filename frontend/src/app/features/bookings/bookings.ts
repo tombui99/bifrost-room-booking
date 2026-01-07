@@ -6,6 +6,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
 import { Router, RouterLink } from '@angular/router';
+import { AdminService } from '../../auth/admin.service';
 
 @Component({
   selector: 'app-root',
@@ -16,6 +17,7 @@ import { Router, RouterLink } from '@angular/router';
 export class Bookings {
   auth = inject(Auth);
   api = inject(ApiService);
+  adminService = inject(AdminService);
   currentUser = toSignal(user(this.auth));
   router = inject(Router);
 
@@ -44,6 +46,8 @@ export class Bookings {
   currentImageIndex = signal<number>(0);
   selectedRoomId = signal('');
 
+  isAdmin = toSignal(this.adminService.isAdmin$, { initialValue: false });
+
   // DATA
   rooms = signal<Room[]>([]);
   bookings = signal<Booking[]>([]);
@@ -55,6 +59,7 @@ export class Bookings {
 
   constructor() {
     this.loadRooms();
+    this.adminService.checkAdmin();
   }
 
   // --- API CALLS ---
@@ -104,7 +109,7 @@ export class Bookings {
 
   // 2. EDIT BOOKING (Existing Booking)
   editBooking(b: Booking) {
-    if (b.createdBy !== this.currentUser()?.uid) {
+    if (b.createdBy !== this.currentUser()?.uid && !this.isAdmin()) {
       return alert('Bạn chỉ có thể chỉnh sửa booking của mình.');
     }
     this.selectedRoomId.set(this.rooms().find((r) => r.id === b.roomId)?.name || '');

@@ -29,5 +29,9 @@ export const routes: Routes = [
     path: 'login',
     component: Login,
   },
-  { path: 'tablet/:id', component: TabletView },
+  {
+    path: 'tablet/:id',
+    component: TabletView,
+    canActivate: [adminGuard],
+  },
 ];
