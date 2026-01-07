@@ -259,14 +259,16 @@ app.get("/api/dashboard/stats", async (req, res) => {
 
     const now = new Date();
     const todayStr = now.toISOString().split("T")[0];
-    const currentTime = now.getHours() + now.getMinutes() / 60;
+
+    // Convert current time to total minutes (e.g., 1:30 PM becomes 810)
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     // 1. Calculate Live Stats for Cards
     const activeBookings = allBookings.filter(
       (b) =>
         b.date === todayStr &&
-        currentTime >= b.startTime &&
-        currentTime <= b.startTime + b.duration
+        currentMinutes >= b.startTime &&
+        currentMinutes <= b.startTime + b.duration
     );
 
     const bookedRoomIds = activeBookings.map((b) => b.roomId);
