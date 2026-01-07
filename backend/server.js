@@ -110,6 +110,37 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
       return res.status(400).json({ message: "Invalid booking data" });
     }
 
+    // --- PAST DATE VALIDATION WITH LUXON ---
+    // 1. Get current time in VN
+    const now = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+
+    // 2. Convert total minutes to Hours and Minutes
+    // Example: 540 minutes -> hour: 9, minute: 0
+    const startMins = Number(startTime);
+    const hours = Math.floor(startMins / 60);
+    const minutes = startMins % 60;
+
+    // 3. Create the booking DateTime object
+    const bookingDateTime = DateTime.fromISO(date, {
+      zone: "Asia/Ho_Chi_Minh",
+    }).set({
+      hour: hours,
+      minute: minutes,
+      second: 0,
+      millisecond: 0,
+    });
+
+    // 4. Comparison Check
+    if (bookingDateTime.toMillis() < now.toMillis()) {
+      return res.status(400).json({
+        message: "Không thể đặt lịch cho thời gian trong quá khứ",
+        details: {
+          now: now.toFormat("HH:mm dd/MM/yyyy"),
+          requested: bookingDateTime.toFormat("HH:mm dd/MM/yyyy"),
+        },
+      });
+    }
+
     const newStart = startTime;
     const newEnd = startTime + duration;
 
@@ -149,7 +180,6 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
 // 7. UPDATE BOOKING (Update)
 app.put("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
