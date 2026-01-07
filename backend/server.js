@@ -46,7 +46,7 @@ app.get("/api/rooms", async (req, res) => {
   }
 });
 
-// 2. CREATE ROOM (Create) - NEW
+// 2. CREATE ROOM
 app.post("/api/rooms", verifyToken, async (req, res) => {
   try {
     // Basic validation: Name and MaxCapacity are required
@@ -62,7 +62,7 @@ app.post("/api/rooms", verifyToken, async (req, res) => {
   }
 });
 
-// 3. UPDATE ROOM (Update) - NEW
+// 3. UPDATE ROOM
 app.put("/api/rooms/:id", verifyToken, async (req, res) => {
   try {
     await db.collection("rooms").doc(req.params.id).update(req.body);
@@ -72,7 +72,7 @@ app.put("/api/rooms/:id", verifyToken, async (req, res) => {
   }
 });
 
-// 4. DELETE ROOM (Delete) - NEW
+// 4. DELETE ROOM
 app.delete("/api/rooms/:id", verifyToken, async (req, res) => {
   try {
     await db.collection("rooms").doc(req.params.id).delete();
@@ -150,9 +150,12 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
 });
 
 // 7. UPDATE BOOKING (Update)
+const KIOSK_EMAIL = "buiquangminh9934@gmail.com";
+
 app.put("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
-    const { roomId, date, startTime, duration } = req.body;
+    const { roomId, date, startTime, duration, title, guestCount, type } =
+      req.body;
     const bookingId = req.params.id;
 
     const docRef = db.collection("bookings").doc(bookingId);
@@ -161,7 +164,10 @@ app.put("/api/bookings/:id", verifyToken, async (req, res) => {
     if (!doc.exists)
       return res.status(404).json({ message: "Booking not found" });
 
-    if (doc.data().createdBy !== req.user.uid)
+    const isKiosk = req.user.email === KIOSK_EMAIL;
+    const isCreator = doc.data().creatorEmail === req.user.email;
+
+    if (!isCreator && !isKiosk)
       return res.status(403).json({ message: "Unauthorized" });
 
     const newStart = startTime;
@@ -189,7 +195,18 @@ app.put("/api/bookings/:id", verifyToken, async (req, res) => {
       });
     }
 
-    await docRef.update(req.body);
+    const updatePayload = {};
+    if (roomId) updatePayload.roomId = roomId;
+    if (date) updatePayload.date = date;
+    if (startTime !== undefined) updatePayload.startTime = startTime;
+    if (duration !== undefined) updatePayload.duration = duration;
+    if (title) updatePayload.title = title;
+    if (guestCount) updatePayload.guestCount = guestCount;
+    if (type) updatePayload.type = type;
+
+    await docRef.update(updatePayload);
+
+    // await docRef.update(req.body);
     res.json({ message: "Booking updated" });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -207,6 +224,19 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
 
     await docRef.delete();
     res.json({ message: "Deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 9. GET ROOM BY ID (Cho Tablet để hiển thị tên phòng/sức chứa)
+app.get("/api/rooms/:id", async (req, res) => {
+  try {
+    const doc = await db.collection("rooms").doc(req.params.id).get();
+    if (!doc.exists) {
+      return res.status(404).json({ message: "Room not found" });
+    }
+    res.json({ id: doc.id, ...doc.data() });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

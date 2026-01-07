@@ -36,6 +36,11 @@ export class ApiService {
     return firstValueFrom(this.http.get<any[]>(`${this.apiUrl}/rooms`));
   }
 
+  // READ: Get room by ID
+  async getRoomById(id: string) {
+    return firstValueFrom(this.http.get<any>(`${this.apiUrl}/rooms/${id}`));
+  }
+
   // CREATE: Add a new room (Admin only usually)
   async createRoom(roomData: any) {
     const options = await this.getHeaders();

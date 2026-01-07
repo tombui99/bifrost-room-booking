@@ -6,6 +6,7 @@ import { MainLayoutComponent } from './main-layout';
 import { Dashboard } from './features/dashboard/dashboard';
 import { Login } from './auth/components/login';
 import { adminGuard } from './auth/admin.guard';
+import { TabletView } from './features/tablet-view/tablet-view';
 
 export const routes: Routes = [
   {
@@ -28,4 +29,5 @@ export const routes: Routes = [
     path: 'login',
     component: Login,
   },
+  { path: 'tablet/:id', component: TabletView },
 ];

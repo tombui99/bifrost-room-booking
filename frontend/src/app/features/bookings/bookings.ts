@@ -5,12 +5,12 @@ import { Auth, user } from '@angular/fire/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: 'bookings.html',
 })
 export class Bookings {
@@ -47,7 +47,7 @@ export class Bookings {
   // DATA
   rooms = signal<Room[]>([]);
   bookings = signal<Booking[]>([]);
-  timeSlots = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+  timeSlots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
   get selectedRoom() {
     return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;

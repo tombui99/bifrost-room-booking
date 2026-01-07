@@ -21,4 +21,5 @@ export interface Booking {
   type: 'busy' | 'mine' | 'pending';
   guestCount: number;
   createdBy: string;
+  creatorEmail: string;
 }
