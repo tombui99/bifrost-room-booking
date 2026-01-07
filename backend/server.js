@@ -151,8 +151,6 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
 });
 
 // 7. UPDATE BOOKING (Update)
-const KIOSK_EMAIL = "buiquangminh9934@gmail.com";
-
 app.put("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
     const { roomId, date, startTime, duration, title, guestCount, type } =
@@ -165,11 +163,17 @@ app.put("/api/bookings/:id", verifyToken, async (req, res) => {
     if (!doc.exists)
       return res.status(404).json({ message: "Booking not found" });
 
-    const isKiosk = req.user.email === KIOSK_EMAIL;
+    // 1. Check if the user is an Admin (document exists in 'admins' collection)
+    const adminDoc = await db.collection("admins").doc(req.user.email).get();
+    const isAdmin = adminDoc.exists;
+
+    // 2. Existing checks
     const isCreator = doc.data().creatorEmail === req.user.email;
 
-    if (!isCreator && !isKiosk)
+    // 3. Authorization Logic
+    if (!isCreator && !isAdmin) {
       return res.status(403).json({ message: "Unauthorized" });
+    }
 
     const newStart = startTime;
     const newEnd = startTime + duration;
@@ -220,8 +224,18 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
     const docRef = db.collection("bookings").doc(req.params.id);
     const doc = await docRef.get();
     if (!doc.exists) return res.status(404).json({ message: "Not found" });
-    if (doc.data().createdBy !== req.user.uid)
+
+    // 1. Check if the user is an Admin (document exists in 'admins' collection)
+    const adminDoc = await db.collection("admins").doc(req.user.email).get();
+    const isAdmin = adminDoc.exists;
+
+    // 2. Existing checks
+    const isCreator = doc.data().creatorEmail === req.user.email;
+
+    // 3. Authorization Logic
+    if (!isCreator && !isAdmin) {
       return res.status(403).json({ message: "Unauthorized" });
+    }
 
     await docRef.delete();
     res.json({ message: "Deleted" });
