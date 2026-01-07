@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const admin = require("firebase-admin");
 const dotenv = require("dotenv");
+const { DateTime } = require("luxon");
 
 dotenv.config();
 
@@ -257,11 +258,11 @@ app.get("/api/dashboard/stats", async (req, res) => {
       ...doc.data(),
     }));
 
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
+    const now = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const todayStr = now.toISODate(); // 'YYYY-MM-DD'
 
     // Convert current time to total minutes (e.g., 1:30 PM becomes 810)
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentMinutes = now.hour * 60 + now.minute;
 
     // 1. Calculate Live Stats for Cards
     const activeBookings = allBookings.filter(
@@ -291,13 +292,11 @@ app.get("/api/dashboard/stats", async (req, res) => {
         (userActivityMap[b.creatorEmail] || 0) + 1;
     });
 
-    // 3. Calculate 7-Day Trend
-    const last7Days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      last7Days.push(d.toISOString().split("T")[0]);
-    }
+    // 3. Calculate 7-Day Trend (VN timezone safe)
+    const d = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const last7Days = Array.from({ length: 7 }, (_, idx) =>
+      d.minus({ days: 6 - idx }).toISODate()
+    );
 
     const trendData = last7Days.map((dateStr) => {
       const count = allBookings.filter((b) => b.date === dateStr).length;
