@@ -116,6 +116,14 @@ type RoomState = 'free' | 'busy';
             </div>
             }
           </div>
+          <div
+            class="absolute p-4 bottom-6 right-6 bg-white/90 backdrop-blur rounded-xl shadow-lg flex flex-col items-center gap-2 z-20"
+          >
+            <img src="/assets/booking-qr.png" alt="Scan to book" class="w-28 h-28 object-contain" />
+            <span class="text-xs text-slate-500 font-medium text-center">
+              Scan để đặt phòng vào các khung giờ khác
+            </span>
+          </div>
         </div>
 
         @if (showBookingModal()) {

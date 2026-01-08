@@ -130,8 +130,12 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
       millisecond: 0,
     });
 
-    // 4. Comparison Check
-    if (bookingDateTime.toMillis() < now.toMillis()) {
+    // 4. Comparison Check (allow slight grace period of 1 minutes in the past)
+    const graceMinutes = 1;
+    if (
+      bookingDateTime.toMillis() <
+      now.minus({ minutes: graceMinutes }).toMillis()
+    ) {
       return res.status(400).json({
         message: "Không thể đặt lịch cho thời gian trong quá khứ",
         details: {
