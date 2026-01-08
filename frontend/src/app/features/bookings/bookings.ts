@@ -130,7 +130,8 @@ export class Bookings {
   async confirmBooking() {
     const data = this.modalData();
     const room = this.rooms().find((r) => r.name === this.selectedRoomId());
-    if (!room || !data.title) return alert('Vui lòng nhập đủ thông tin');
+    if (!room) return alert('Vui lòng nhập thông tin phòng');
+    if (!data.title) return alert('Vui lòng nhập chủ đề');
 
     const [startH, startM] = data.startTime.split(':').map(Number);
     const [endH, endM] = data.endTime.split(':').map(Number);
