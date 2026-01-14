@@ -11,195 +11,184 @@ type RoomState = 'free' | 'busy';
   standalone: true,
   imports: [CommonModule, DatePipe],
   template: `
-    <div
-      class="bg-gray-900 h-screen w-screen flex items-center justify-center overflow-hidden font-sans"
-    >
+    <div class="relative w-screen h-screen bg-white overflow-hidden flex font-sans">
       <div
-        class="relative w-[1280px] h-[800px] bg-white rounded-3xl shadow-2xl overflow-hidden flex border-[12px] border-gray-800"
+        class="w-[55%] h-full flex flex-col justify-between p-10 text-white relative transition-colors duration-500 ease-in-out"
+        [class.bg-emerald-500]="currentState() === 'free'"
+        [class.bg-rose-600]="currentState() === 'busy'"
+      >
+        <div class="flex justify-between items-start z-10">
+          <div>
+            <div
+              class="bg-black/10 backdrop-blur px-3 py-1 rounded-lg text-xs font-bold inline-block mb-2"
+            >
+              <img src="/assets/bifrost-logo.png" alt="Bifrost Logo" class="h-12 object-cover" />
+            </div>
+            <h1 class="text-4xl font-bold leading-tight">
+              {{ roomInfo() ? roomInfo()?.name : 'Loading Room...' }}
+            </h1>
+            <p class="opacity-80 mt-2 text-sm">
+              <i class="fas fa-users mr-2"></i>Sức chứa:
+              {{ roomInfo()?.maxCapacity || '...' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex flex-col justify-center items-start h-full space-y-4 z-10">
+          <h2 class="text-8xl font-extrabold tracking-tight">
+            @switch (currentState()) { @case ('free') { TRỐNG } @case ('busy') { BẬN } }
+          </h2>
+          <p class="text-2xl opacity-90 font-light border-l-4 border-white/40 pl-4">
+            @switch (currentState()) { @case ('free') { Phòng đang trống. Có thể đặt ngay. } @case
+            ('busy') { Đang họp. Vui lòng không làm phiền. } }
+          </p>
+
+          @if (currentMeeting(); as meeting) {
+          <div class="mt-4 bg-black/10 rounded-lg p-4 w-full border border-white/10">
+            <p class="font-bold text-lg text-white">{{ meeting.title }}</p>
+            <p class="text-sm opacity-80 text-white">
+              {{ formatTime(meeting.startTime) }} -
+              {{ formatTime(meeting.startTime + meeting.duration) }}
+            </p>
+            <p class="text-xs opacity-60 mt-1">Host: {{ meeting.creatorEmail }}</p>
+          </div>
+          }
+        </div>
+
+        <div class="mt-auto pt-8 z-10">
+          <button
+            (click)="handleMainAction()"
+            class="w-full bg-white transition-all font-bold h-24 rounded-2xl shadow-xl text-3xl flex items-center justify-center gap-4 active:scale-95 text-slate-800"
+          >
+            @if (currentState() === 'free') {
+            <i class="fas fa-plus-circle text-emerald-600"></i>
+            <span>Đặt Phòng Ngay</span>
+            } @else {
+            <i class="fas fa-stop-circle text-rose-600"></i>
+            <span>Kết Thúc Sớm</span>
+            }
+          </button>
+        </div>
+
+        <div
+          class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"
+        ></div>
+      </div>
+
+      <div class="w-[45%] h-full bg-slate-50 flex flex-col border-l border-gray-200 text-slate-800">
+        <div
+          class="p-8 border-b border-gray-200 bg-white flex justify-between items-center shadow-sm z-10"
+        >
+          <div>
+            <h3 class="text-5xl font-light tracking-tighter">
+              {{ currentTime() | date : 'HH:mm' }}
+            </h3>
+            <p class="text-slate-500 font-medium">
+              {{ currentTime() | date : 'EEEE, d MMMM' }}
+            </p>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-8 relative space-y-6">
+          @for (event of sortedEvents(); track event.id) {
+          <div class="flex gap-4 transition-all duration-300">
+            <div
+              class="flex-1 p-5 rounded-xl border-l-4 transform transition-all bg-white border shadow-sm"
+              [class.border-emerald-500]="event.type === 'mine'"
+              [class.border-rose-500]="event.type === 'busy'"
+            >
+              <div class="flex justify-between">
+                <h4 class="font-bold text-lg text-slate-800">{{ event.title }}</h4>
+              </div>
+              <p class="text-sm text-slate-500 mt-1">
+                <i class="far fa-clock mr-1"></i>
+                {{ formatTime(event.startTime) }} –
+                {{ formatTime(event.startTime + event.duration) }}
+              </p>
+            </div>
+          </div>
+          } @empty {
+          <div class="text-center text-slate-400 mt-20 flex flex-col items-center">
+            <i class="fas fa-coffee text-4xl mb-4 text-slate-300"></i>
+            <p>Không có lịch họp nào sắp tới hôm nay.</p>
+          </div>
+          }
+        </div>
+
+        <div
+          class="absolute p-4 bottom-6 right-6 bg-white/90 backdrop-blur rounded-xl shadow-lg flex flex-col items-center gap-2 z-20"
+        >
+          <img src="/assets/booking-qr.png" alt="Scan to book" class="w-28 h-28 object-contain" />
+          <span class="text-xs text-slate-500 font-medium text-center"> Scan để đặt phòng </span>
+        </div>
+      </div>
+
+      @if (showBookingModal()) {
+      <div
+        class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in"
       >
         <div
-          class="w-[55%] h-full flex flex-col justify-between p-12 text-white relative transition-colors duration-500 ease-in-out"
-          [class.bg-emerald-500]="currentState() === 'free'"
-          [class.bg-rose-600]="currentState() === 'busy'"
+          class="bg-white/95 backdrop-blur-xl w-[500px] rounded-3xl p-8 shadow-2xl text-slate-800 text-center"
         >
-          <div class="flex justify-between items-start z-10">
-            <div>
-              <div
-                class="bg-black/10 backdrop-blur px-3 py-1 rounded-lg text-xs font-bold inline-block mb-2"
-              >
-                <img src="/assets/bifrost-logo.png" alt="Bifrost Logo" class="h-12 object-cover" />
-              </div>
-              <h1 class="text-4xl font-bold leading-tight">
-                {{ roomInfo() ? roomInfo()?.name : 'Loading Room...' }}
-              </h1>
-              <p class="opacity-80 mt-2 text-sm">
-                <i class="fas fa-users mr-2"></i>Sức chứa: {{ roomInfo()?.maxCapacity || '...' }}
-              </p>
-            </div>
-          </div>
+          <h3 class="text-2xl font-bold mb-2">Đặt phòng nhanh</h3>
+          <p class="text-slate-500 mb-8">Chọn thời lượng cho cuộc họp này</p>
 
-          <div class="flex flex-col justify-center items-start h-full space-y-4 z-10">
-            <h2 class="text-8xl font-extrabold tracking-tight">
-              @switch (currentState()) { @case ('free') { TRỐNG } @case ('busy') { BẬN } }
-            </h2>
-            <p class="text-2xl opacity-90 font-light border-l-4 border-white/40 pl-4">
-              @switch (currentState()) { @case ('free') { Phòng đang trống. Có thể đặt ngay. } @case
-              ('busy') { Đang họp. Vui lòng không làm phiền. } }
-            </p>
-
-            @if (currentMeeting(); as meeting) {
-            <div class="mt-4 bg-black/10 rounded-lg p-4 w-full border border-white/10">
-              <p class="font-bold text-lg text-white">{{ meeting.title }}</p>
-              <p class="text-sm opacity-80 text-white">
-                {{ formatTime(meeting.startTime) }} -
-                {{ formatTime(meeting.startTime + meeting.duration) }}
-              </p>
-              <p class="text-xs opacity-60 mt-1">Host: {{ meeting.creatorEmail }}</p>
-            </div>
-            }
-          </div>
-
-          <div class="mt-auto pt-8 z-10">
+          <div class="grid grid-cols-2 gap-4 mb-6">
             <button
-              (click)="handleMainAction()"
-              class="w-full bg-white transition-all font-bold h-24 rounded-2xl shadow-xl text-3xl flex items-center justify-center gap-4 active:scale-95 text-slate-800"
+              (click)="bookAdHoc(15)"
+              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
             >
-              @if (currentState() === 'free') {
-              <i class="fas fa-plus-circle text-emerald-600"></i> <span>Đặt Phòng Ngay</span>
-              } @else {
-              <i class="fas fa-stop-circle text-rose-600"></i> <span>Kết Thúc Sớm</span>
-              }
+              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                >15</span
+              >
+              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                >Phút</span
+              >
+            </button>
+
+            <button
+              (click)="bookAdHoc(30)"
+              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+            >
+              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                >30</span
+              >
+              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                >Phút</span
+              >
+            </button>
+
+            <button
+              (click)="bookAdHoc(60)"
+              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+            >
+              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                >1</span
+              >
+              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                >Giờ</span
+              >
+            </button>
+
+            <button
+              (click)="bookAdHoc(120)"
+              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+            >
+              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                >2</span
+              >
+              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                >Giờ</span
+              >
             </button>
           </div>
 
-          <div
-            class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"
-          ></div>
+          <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold py-3">
+            Hủy bỏ
+          </button>
         </div>
-
-        <div
-          class="w-[45%] h-full bg-slate-50 flex flex-col border-l border-gray-200 text-slate-800"
-        >
-          <div
-            class="p-8 border-b border-gray-200 bg-white flex justify-between items-center shadow-sm z-10"
-          >
-            <div>
-              <h3 class="text-5xl font-light tracking-tighter">
-                {{ currentTime() | date : 'HH:mm' }}
-              </h3>
-              <p class="text-slate-500 font-medium">{{ currentTime() | date : 'EEEE, d MMMM' }}</p>
-            </div>
-          </div>
-
-          <div class="flex-1 overflow-y-auto p-8 relative space-y-6">
-            @for (event of sortedEvents(); track event.id) {
-            <div class="flex gap-4 transition-all duration-300">
-              <div
-                class="flex-1 p-5 rounded-xl border-l-4 transform transition-all bg-white border shadow-sm"
-                [class.border-emerald-500]="event.type === 'mine'"
-                [class.border-rose-500]="event.type === 'busy'"
-              >
-                <div class="flex justify-between">
-                  <h4 class="font-bold text-lg text-slate-800">{{ event.title }}</h4>
-                </div>
-                <p class="text-sm text-slate-500 mt-1">
-                  <i class="far fa-clock mr-1"></i>
-                  {{ formatTime(event.startTime) }} –
-                  {{ formatTime(event.startTime + event.duration) }}
-                </p>
-              </div>
-            </div>
-            } @empty {
-            <div class="text-center text-slate-400 mt-20 flex flex-col items-center">
-              <i class="fas fa-coffee text-4xl mb-4 text-slate-300"></i>
-              <p>Không có lịch họp nào sắp tới hôm nay.</p>
-            </div>
-            }
-          </div>
-          <div
-            class="absolute p-4 bottom-6 right-6 bg-white/90 backdrop-blur rounded-xl shadow-lg flex flex-col items-center gap-2 z-20"
-          >
-            <img src="/assets/booking-qr.png" alt="Scan to book" class="w-28 h-28 object-contain" />
-            <span class="text-xs text-slate-500 font-medium text-center">
-              Scan để đặt phòng vào các khung giờ khác
-            </span>
-          </div>
-        </div>
-
-        @if (showBookingModal()) {
-        <div
-          class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in"
-        >
-          <div
-            class="bg-white/95 backdrop-blur-xl w-[500px] rounded-3xl p-8 shadow-2xl text-slate-800 text-center"
-          >
-            <h3 class="text-2xl font-bold mb-2">Đặt phòng nhanh</h3>
-            <p class="text-slate-500 mb-8">Chọn thời lượng cho cuộc họp này</p>
-
-            <div class="grid grid-cols-2 gap-4 mb-6">
-              <button
-                (click)="bookAdHoc(15)"
-                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-              >
-                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                  >15</span
-                >
-                <span
-                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                  >Phút</span
-                >
-              </button>
-
-              <button
-                (click)="bookAdHoc(30)"
-                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-              >
-                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                  >30</span
-                >
-                <span
-                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                  >Phút</span
-                >
-              </button>
-
-              <button
-                (click)="bookAdHoc(60)"
-                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-              >
-                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                  >1</span
-                >
-                <span
-                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                  >Giờ</span
-                >
-              </button>
-
-              <button
-                (click)="bookAdHoc(120)"
-                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-              >
-                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                  >2</span
-                >
-                <span
-                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                  >Giờ</span
-                >
-              </button>
-            </div>
-
-            <button
-              (click)="closeModal()"
-              class="text-slate-400 hover:text-slate-600 font-bold py-3"
-            >
-              Hủy bỏ
-            </button>
-          </div>
-        </div>
-        }
       </div>
+      }
     </div>
   `,
 })
