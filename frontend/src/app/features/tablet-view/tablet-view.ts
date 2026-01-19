@@ -36,22 +36,35 @@ type RoomState = 'free' | 'busy';
 
         <div class="flex flex-col justify-center items-start h-full space-y-4 z-10">
           <h2 class="text-8xl font-extrabold tracking-tight">
-            @switch (currentState()) { @case ('free') { TRỐNG } @case ('busy') { BẬN } }
+            @switch (currentState()) {
+              @case ('free') {
+                TRỐNG
+              }
+              @case ('busy') {
+                BẬN
+              }
+            }
           </h2>
           <p class="text-2xl opacity-90 font-light border-l-4 border-white/40 pl-4">
-            @switch (currentState()) { @case ('free') { Phòng đang trống. Có thể đặt ngay. } @case
-            ('busy') { Đang họp. Vui lòng không làm phiền. } }
+            @switch (currentState()) {
+              @case ('free') {
+                Phòng đang trống. Có thể đặt ngay.
+              }
+              @case ('busy') {
+                Đang họp. Vui lòng không làm phiền.
+              }
+            }
           </p>
 
           @if (currentMeeting(); as meeting) {
-          <div class="mt-4 bg-black/10 rounded-lg p-4 w-full border border-white/10">
-            <p class="font-bold text-lg text-white">{{ meeting.title }}</p>
-            <p class="text-sm opacity-80 text-white">
-              {{ formatTime(meeting.startTime) }} -
-              {{ formatTime(meeting.startTime + meeting.duration) }}
-            </p>
-            <p class="text-xs opacity-60 mt-1">Host: {{ meeting.creatorEmail }}</p>
-          </div>
+            <div class="mt-4 bg-black/10 rounded-lg p-4 w-full border border-white/10">
+              <p class="font-bold text-lg text-white">{{ meeting.title }}</p>
+              <p class="text-sm opacity-80 text-white">
+                {{ formatTime(meeting.startTime) }} -
+                {{ formatTime(meeting.startTime + meeting.duration) }}
+              </p>
+              <p class="text-xs opacity-60 mt-1">Host: {{ meeting.creatorEmail }}</p>
+            </div>
           }
         </div>
 
@@ -61,11 +74,11 @@ type RoomState = 'free' | 'busy';
             class="w-full bg-white transition-all font-bold h-24 rounded-2xl shadow-xl text-3xl flex items-center justify-center gap-4 active:scale-95 text-slate-800"
           >
             @if (currentState() === 'free') {
-            <i class="fas fa-plus-circle text-emerald-600"></i>
-            <span>Đặt Phòng Ngay</span>
+              <i class="fas fa-plus-circle text-emerald-600"></i>
+              <span>Đặt Phòng Ngay</span>
             } @else {
-            <i class="fas fa-stop-circle text-rose-600"></i>
-            <span>Kết Thúc Sớm</span>
+              <i class="fas fa-stop-circle text-rose-600"></i>
+              <span>Kết Thúc Sớm</span>
             }
           </button>
         </div>
@@ -81,37 +94,38 @@ type RoomState = 'free' | 'busy';
         >
           <div>
             <h3 class="text-5xl font-light tracking-tighter">
-              {{ currentTime() | date : 'HH:mm' }}
+              {{ currentTime() | date: 'HH:mm' }}
             </h3>
             <p class="text-slate-500 font-medium">
-              {{ currentTime() | date : 'EEEE, d MMMM' }}
+              {{ currentTime() | date: 'EEEE, d MMMM' }}
             </p>
           </div>
         </div>
 
         <div class="flex-1 overflow-y-auto p-8 relative space-y-6">
           @for (event of sortedEvents(); track event.id) {
-          <div class="flex gap-4 transition-all duration-300">
-            <div
-              class="flex-1 p-5 rounded-xl border-l-4 transform transition-all bg-white border shadow-sm"
-              [class.border-emerald-500]="event.type === 'mine'"
-              [class.border-rose-500]="event.type === 'busy'"
-            >
-              <div class="flex justify-between">
-                <h4 class="font-bold text-lg text-slate-800">{{ event.title }}</h4>
+            <div class="flex gap-4 transition-all duration-300">
+              <div
+                class="flex-1 p-5 rounded-xl border-l-4 transform transition-all bg-white border shadow-sm"
+                [class.border-emerald-500]="event.type === 'mine'"
+                [class.border-rose-500]="event.type === 'busy'"
+              >
+                <div class="flex justify-between">
+                  <h4 class="font-bold text-lg text-slate-800">{{ event.title }}</h4>
+                </div>
+                <p class="text-slate-500 mt-1">Host: {{ event.creatorEmail }}</p>
+                <p class="text-sm text-slate-500 mt-1">
+                  <i class="far fa-clock mr-1"></i>
+                  {{ formatTime(event.startTime) }} –
+                  {{ formatTime(event.startTime + event.duration) }}
+                </p>
               </div>
-              <p class="text-sm text-slate-500 mt-1">
-                <i class="far fa-clock mr-1"></i>
-                {{ formatTime(event.startTime) }} –
-                {{ formatTime(event.startTime + event.duration) }}
-              </p>
             </div>
-          </div>
           } @empty {
-          <div class="text-center text-slate-400 mt-20 flex flex-col items-center">
-            <i class="fas fa-coffee text-4xl mb-4 text-slate-300"></i>
-            <p>Không có lịch họp nào sắp tới hôm nay.</p>
-          </div>
+            <div class="text-center text-slate-400 mt-20 flex flex-col items-center">
+              <i class="fas fa-coffee text-4xl mb-4 text-slate-300"></i>
+              <p>Không có lịch họp nào sắp tới hôm nay.</p>
+            </div>
           }
         </div>
 
@@ -124,70 +138,77 @@ type RoomState = 'free' | 'busy';
       </div>
 
       @if (showBookingModal()) {
-      <div
-        class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in"
-      >
         <div
-          class="bg-white/95 backdrop-blur-xl w-[500px] rounded-3xl p-8 shadow-2xl text-slate-800 text-center"
+          class="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in"
         >
-          <h3 class="text-2xl font-bold mb-2">Đặt phòng nhanh</h3>
-          <p class="text-slate-500 mb-8">Chọn thời lượng cho cuộc họp này</p>
+          <div
+            class="bg-white/95 backdrop-blur-xl w-[500px] rounded-3xl p-8 shadow-2xl text-slate-800 text-center"
+          >
+            <h3 class="text-2xl font-bold mb-2">Đặt phòng nhanh</h3>
+            <p class="text-slate-500 mb-8">Chọn thời lượng cho cuộc họp này</p>
 
-          <div class="grid grid-cols-2 gap-4 mb-6">
-            <button
-              (click)="bookAdHoc(15)"
-              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-            >
-              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                >15</span
+            <div class="grid grid-cols-2 gap-4 mb-6">
+              <button
+                (click)="bookAdHoc(15)"
+                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
               >
-              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                >Phút</span
+                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                  >15</span
+                >
+                <span
+                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                  >Phút</span
+                >
+              </button>
+
+              <button
+                (click)="bookAdHoc(30)"
+                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
               >
-            </button>
+                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                  >30</span
+                >
+                <span
+                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                  >Phút</span
+                >
+              </button>
+
+              <button
+                (click)="bookAdHoc(60)"
+                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+              >
+                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                  >1</span
+                >
+                <span
+                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                  >Giờ</span
+                >
+              </button>
+
+              <button
+                (click)="bookAdHoc(120)"
+                class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+              >
+                <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
+                  >2</span
+                >
+                <span
+                  class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
+                  >Giờ</span
+                >
+              </button>
+            </div>
 
             <button
-              (click)="bookAdHoc(30)"
-              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
+              (click)="closeModal()"
+              class="text-slate-400 hover:text-slate-600 font-bold py-3"
             >
-              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                >30</span
-              >
-              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                >Phút</span
-              >
-            </button>
-
-            <button
-              (click)="bookAdHoc(60)"
-              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-            >
-              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                >1</span
-              >
-              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                >Giờ</span
-              >
-            </button>
-
-            <button
-              (click)="bookAdHoc(120)"
-              class="bg-slate-50 hover:bg-emerald-50 border-2 border-slate-200 hover:border-emerald-500 p-6 rounded-2xl transition-all group"
-            >
-              <span class="block text-3xl font-bold text-slate-700 group-hover:text-emerald-700"
-                >2</span
-              >
-              <span class="text-xs text-slate-400 group-hover:text-emerald-600 font-bold uppercase"
-                >Giờ</span
-              >
+              Hủy bỏ
             </button>
           </div>
-
-          <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 font-bold py-3">
-            Hủy bỏ
-          </button>
         </div>
-      </div>
       }
     </div>
   `,
