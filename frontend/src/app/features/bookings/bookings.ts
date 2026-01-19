@@ -23,9 +23,25 @@ export class Bookings {
 
   // UI STATE
   selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
+  selectedLocation = signal<string>('');
   isEditing = computed(() => !!this.modalData().id);
   isSaving = signal(false);
   isLoading = signal(false);
+
+  uniqueLocations = computed(() => {
+    const locations = this.rooms()
+      .map((r) => r.location)
+      .filter((loc): loc is string => !!loc);
+    return [...new Set(locations)];
+  });
+
+  filteredRooms = computed(() => {
+    const location = this.selectedLocation();
+    const rooms = this.rooms();
+
+    if (!location) return rooms;
+    return rooms.filter((r) => r.location === location);
+  });
 
   // MODAL STATE
   showModal = signal(false);
