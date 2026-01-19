@@ -113,7 +113,9 @@ type RoomState = 'free' | 'busy';
                 <div class="flex justify-between">
                   <h4 class="font-bold text-lg text-slate-800">{{ event.title }}</h4>
                 </div>
-                <p class="text-slate-500 mt-1">Host: {{ event.creatorEmail }}</p>
+                <p class="text-slate-500 mt-1">
+                  Host: {{ event.creatorEmail }} {{ event.phone ? '| Phone: ' + event.phone : '' }}
+                </p>
                 <p class="text-sm text-slate-500 mt-1">
                   <i class="far fa-clock mr-1"></i>
                   {{ formatTime(event.startTime) }} –

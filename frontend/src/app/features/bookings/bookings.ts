@@ -55,12 +55,14 @@ export class Bookings {
     title: string;
     guestCount: number;
     creatorEmail: string;
+    phone: string;
   }>({
     startTime: '',
     endTime: '',
     title: '',
     guestCount: 1,
     creatorEmail: '',
+    phone: '',
   });
 
   currentImageIndex = signal<number>(0);
@@ -133,6 +135,7 @@ export class Bookings {
       endTime: (start + 1 < 10 ? '0' : '') + (start + 1) + ':00',
       guestCount: 1,
       creatorEmail: '',
+      phone: '',
     });
     this.showModal.set(true);
   }
@@ -153,6 +156,7 @@ export class Bookings {
       startTime: this.minutesToTime(b.startTime),
       endTime: this.minutesToTime(b.startTime + b.duration),
       creatorEmail: b.creatorEmail,
+      phone: b.phone,
     });
     this.showModal.set(true);
   }
@@ -181,6 +185,7 @@ export class Bookings {
       startTime: startTotalMinutes,
       duration: endTotalMinutes - startTotalMinutes,
       guestCount: data.guestCount,
+      phone: data.phone,
     };
 
     try {

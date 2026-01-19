@@ -22,4 +22,5 @@ export interface Booking {
   guestCount: number;
   createdBy: string;
   creatorEmail: string;
+  phone: string;
 }
