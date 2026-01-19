@@ -17,10 +17,10 @@
 
       <select
         [ngModel]="selectedLocation()"
-        (ngModelChange)="selectedLocation.set($event)"
+        (ngModelChange)="updateLocation($event)"
         class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm hover:border-emerald-400 transition-colors w-full sm:w-auto bg-white"
       >
-        <option value="">Tất cả các tầng</option>
+        <option value="">Tất cả khu vực</option>
         @for (loc of uniqueLocations(); track loc) {
           <option [value]="loc">{{ loc }}</option>
         }

@@ -5,7 +5,7 @@ import { Auth, user } from '@angular/fire/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminService } from '../../auth/admin.service';
 
 @Component({
@@ -20,27 +20,29 @@ export class Bookings {
   adminService = inject(AdminService);
   currentUser = toSignal(user(this.auth));
   router = inject(Router);
+  route = inject(ActivatedRoute);
 
   // UI STATE
   selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
-  selectedLocation = signal<string>('');
   isEditing = computed(() => !!this.modalData().id);
   isSaving = signal(false);
   isLoading = signal(false);
 
+  private queryParams = toSignal(this.route.queryParams);
+  selectedLocation = computed(() => this.queryParams()?.['location'] ?? '');
+
   uniqueLocations = computed(() => {
     const locations = this.rooms()
       .map((r) => r.location)
-      .filter((loc): loc is string => !!loc);
-    return [...new Set(locations)];
+      .filter((l): l is string => !!l);
+    return [...new Set(locations)].sort();
   });
 
   filteredRooms = computed(() => {
-    const location = this.selectedLocation();
+    const loc = this.selectedLocation();
     const rooms = this.rooms();
-
-    if (!location) return rooms;
-    return rooms.filter((r) => r.location === location);
+    if (!loc) return rooms;
+    return rooms.filter((r) => r.location === loc);
   });
 
   // MODAL STATE
@@ -76,6 +78,15 @@ export class Bookings {
   constructor() {
     this.loadRooms();
     this.adminService.checkAdmin();
+  }
+
+  updateLocation(location: string) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { location: location || null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   // --- API CALLS ---
