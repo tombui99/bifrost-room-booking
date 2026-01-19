@@ -239,20 +239,38 @@
             <input
               type="text"
               [(ngModel)]="modalData().title"
+              #title="ngModel"
+              required
               placeholder="Nhập tiêu đề cuộc họp..."
               class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
             />
+            @if (title.errors?.['required']) {
+              <div class="text-red-500 text-xs mt-1">
+                <div>Cần điền tiêu đề</div>
+              </div>
+            }
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
               >Điện thoại liên lạc
             </label>
             <input
-              type="text"
+              type="tel"
+              name="phone"
               [(ngModel)]="modalData().phone"
+              #phone="ngModel"
+              pattern="^(0|\+84)(3|5|7|8|9)[0-9]{8}$"
+              inputmode="numeric"
               placeholder="Nhập số điện thoại..."
-              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              class="w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 border-slate-300 invalid:border-red-500 invalid:ring-red-500"
             />
+            @if (phone.invalid) {
+              <div class="text-red-500 text-xs mt-1">
+                @if (phone.errors?.['pattern']) {
+                  <div>Số điện thoại không hợp lệ</div>
+                }
+              </div>
+            }
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div>
@@ -327,8 +345,8 @@
             </button>
             <button
               (click)="confirmBooking()"
-              [disabled]="isSaving()"
-              class="flex-[2] md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 md:px-8 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95"
+              [disabled]="isSaving() || phone.invalid || !modalData().title.trim()"
+              class="flex-[2] md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 disabled:text-white disabled:cursor-not-allowed disabled:shadow-none text-white font-bold py-3 px-4 md:px-8 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 disabled:active:scale-100"
             >
               @if (isSaving()) {
                 <i class="fas fa-spinner fa-spin"></i>
