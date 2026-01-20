@@ -143,7 +143,12 @@ export class Bookings {
   // 2. EDIT BOOKING (Existing Booking)
   editBooking(b: Booking) {
     if (b.createdBy !== this.currentUser()?.uid && !this.isAdmin()) {
-      return alert('Bạn chỉ có thể chỉnh sửa booking của mình.');
+      alert(
+        `📅 Booking Details\n\n` +
+          `📝 Title: ${b.title}\n` +
+          `⏰ Time: ${this.formatTime(b.startTime)} – ${this.formatTime(b.startTime + b.duration)}`,
+      );
+      return;
     }
     this.selectedRoomId.set(this.rooms().find((r) => r.id === b.roomId)?.name || '');
     this.currentImageIndex.set(0);
