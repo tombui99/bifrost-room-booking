@@ -9,14 +9,14 @@ import { ActivatedRoute, Router } from '@angular/router';
   imports: [CommonModule],
   template: `
     <div class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4 font-sans">
-      <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-8 text-center animate-scale-in">
-        <div
-          class="w-20 h-20 bg-emerald-500 rounded-2xl flex items-center justify-center text-4xl font-bold text-white shadow-lg mx-auto mb-6"
-        >
-          S
+      <div
+        class="bg-slate-500 w-full max-w-md rounded-3xl shadow-2xl p-8 text-center animate-scale-in"
+      >
+        <div class="flex justify-center gap-3">
+          <img src="/assets/bifrost-logo.png" alt="Bifrost Logo" class="h-32 object-cover" />
         </div>
-        <h1 class="text-3xl font-bold text-slate-800 mb-2">Bifrost room booking</h1>
-        <p class="text-slate-500 mb-8">Đăng nhập để tiếp tục</p>
+        <h1 class="text-white text-3xl font-bold mb-2">Bifrost room booking</h1>
+        <p class="text-white mb-8">Đăng nhập để tiếp tục</p>
         <button
           (click)="loginWithGoogle()"
           class="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-sm"
