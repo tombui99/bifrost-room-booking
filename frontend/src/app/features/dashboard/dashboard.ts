@@ -55,14 +55,11 @@ import { ApiService } from '../../api/api.service';
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-8">
-        <h4 class="text-lg font-bold mb-4">Booking Trend (Last 7 Days)</h4>
-        <div class="h-64">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h4 class="text-lg font-bold mb-4">Booking Trend (Last 7 Days)</h4>
           <canvas #trendCanvas></canvas>
         </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h4 class="text-lg font-bold mb-4">Room Popularity</h4>
           <canvas #usageCanvas></canvas>
@@ -123,7 +120,7 @@ export class Dashboard {
             },
           ],
         },
-      })
+      }),
     );
 
     // 2. Booking Trend (Line)
@@ -143,7 +140,7 @@ export class Dashboard {
             },
           ],
         },
-      })
+      }),
     );
 
     // 3. Top Users (Doughnut)
@@ -170,7 +167,7 @@ export class Dashboard {
             },
           },
         },
-      })
+      }),
     );
   }
 }
