@@ -232,16 +232,23 @@ export class Bookings {
     return this.bookings().filter((b) => b.roomId === rid && b.date === this.selectedDate());
   }
   getBookingStyle(b: Booking) {
-    const dayStartTime = this.timeSlots[0]; // e.g. 8
+    const dayStartTime = this.timeSlots[0];
     const dayStartMinutes = dayStartTime * 60;
-
     const totalDayMinutes = this.timeSlots.length * 60;
 
-    const left = ((b.startTime - dayStartMinutes) / totalDayMinutes) * 100;
+    // 1. Calculate the raw percentage values
+    let left = ((b.startTime - dayStartMinutes) / totalDayMinutes) * 100;
+    let width = (b.duration / totalDayMinutes) * 100;
 
-    const width = (b.duration / totalDayMinutes) * 100;
+    // 2. Define the gap size (0.4% is usually enough for a 2-4px gap)
+    const gap = 0.4;
 
-    return { left, width };
+    // 3. Subtract gap from width and add a small offset to 'left'
+    // to keep the booking centered.
+    return {
+      left: left + gap / 2,
+      width: width - gap,
+    };
   }
   isToday(dateStr: string) {
     return dateStr === new Date().toISOString().split('T')[0];
