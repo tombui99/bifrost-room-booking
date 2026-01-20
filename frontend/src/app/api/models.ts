@@ -3,9 +3,7 @@ export interface Room {
   id?: string;
   name: string;
   location: string;
-  capacity: string;
   maxCapacity: number;
-  icon: string;
   description: string;
   amenities: string[];
   images: string[];
