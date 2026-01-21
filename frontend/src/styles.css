@@ -31,7 +31,7 @@
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
+  height: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #cbd5e1;

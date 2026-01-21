@@ -78,7 +78,7 @@ export class Bookings {
   // DATA
   rooms = signal<Room[]>([]);
   bookings = signal<Booking[]>([]);
-  timeSlots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+  timeSlots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
   get selectedRoom() {
     return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;
@@ -342,5 +342,22 @@ export class Bookings {
 
     this.selectedDate.set(newDateStr);
     this.loadBookings();
+  }
+  // Time validation
+  // Returns true if the time is invalid (outside 07:00 - 21:00)
+  isTimeInvalid(time: string | undefined): boolean {
+    if (!time) return true;
+    return time < '07:00' || time > '21:00';
+  }
+
+  // Check if the whole form is invalid for the Save button
+  isTimeRangeInvalid(): boolean {
+    const data = this.modalData();
+    return (
+      !data.title ||
+      this.isTimeInvalid(data.startTime) ||
+      this.isTimeInvalid(data.endTime) ||
+      data.startTime >= data.endTime // End must be after Start
+    );
   }
 }

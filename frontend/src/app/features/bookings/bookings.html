@@ -6,7 +6,7 @@
   </div>
 }
 @if (!isLoading() && rooms() && bookings()) {
-  <main class="h-screen overflow-hidden relative bg-slate-50 p-6 flex flex-col isolate">
+  <main class="overflow-hidden relative bg-slate-50 p-6 flex flex-col isolate">
     <div class="flex gap-4 mb-4 md:mb-6 items-center flex-wrap shrink-0">
       <div class="flex items-center gap-2 bg-white rounded-lg shadow-sm p-1 border border-gray-300">
         <button
@@ -59,7 +59,7 @@
           <div class="flex">
             @for (hour of timeSlots; track hour) {
               <div
-                class="text-center py-4 text-[10px] md:text-xs font-bold text-gray-400 border-r border-gray-100 w-[100px] md:flex-1 md:min-w-[100px]"
+                class="text-center py-4 text-[10px] md:text-xs font-bold text-gray-400 border-r border-gray-100 w-[150px] md:flex-1 md:min-w-[100px]"
               >
                 {{ hour }}:00
               </div>
@@ -83,7 +83,7 @@
               <div class="flex h-full">
                 @for (h of timeSlots; track h) {
                   <div
-                    class="border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative w-[100px] md:flex-1 md:min-w-[100px]"
+                    class="border-r border-gray-100 h-full hover:bg-emerald-50/30 cursor-pointer relative w-[150px] md:flex-1 md:min-w-[100px]"
                     (click)="openModal(room.name, h + ':00')"
                   >
                     <div
@@ -298,6 +298,11 @@
                 [(ngModel)]="modalData().startTime"
                 class="w-full border border-slate-300 rounded-xl px-2 md:px-4 py-3 cursor-pointer text-sm"
               />
+              @if (isTimeInvalid(modalData().startTime)) {
+                <div class="text-red-500 text-xs mt-1">
+                  <div>Thời gian phải từ 7:00 đến 21:00</div>
+                </div>
+              }
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label>
@@ -307,6 +312,11 @@
                 [(ngModel)]="modalData().endTime"
                 class="w-full border border-slate-300 rounded-xl px-2 md:px-4 py-3 cursor-pointer text-sm"
               />
+              @if (isTimeInvalid(modalData().endTime)) {
+                <div class="text-red-500 text-xs mt-1">
+                  <div>Thời gian phải từ 7:00 đến 21:00</div>
+                </div>
+              }
             </div>
           </div>
           @if (!isEditing()) {
@@ -424,7 +434,8 @@
                 isSaving() ||
                 phone.invalid ||
                 !modalData().title.trim() ||
-                (!modalData().recurrenceEndDate && modalData().recurrenceType !== 'none')
+                (!modalData().recurrenceEndDate && modalData().recurrenceType !== 'none') ||
+                isTimeRangeInvalid()
               "
               class="flex-[2] md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 disabled:text-white disabled:cursor-not-allowed disabled:shadow-none text-white font-bold py-3 px-4 md:px-8 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 disabled:active:scale-100"
             >
