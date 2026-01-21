@@ -127,12 +127,21 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
 
     // Loop to generate dates
     while (currentDt <= endDt) {
+      const isWeekend = currentDt.weekday === 6 || currentDt.weekday === 7; // 6 is Sat, 7 is Sun in Luxon
+
+      if (recurrence?.type === "workdays" && isWeekend) {
+        // Skip adding this date and move to the next day
+        currentDt = currentDt.plus({ days: 1 });
+        continue;
+      }
+
       datesToBook.push(currentDt.toISODate());
 
       if (!recurrence || recurrence.type === "none") break;
 
       switch (recurrence.type) {
         case "daily":
+        case "workdays": // Both increment by 1 day, but 'workdays' skips weekends via the check above
           currentDt = currentDt.plus({ days: 1 });
           break;
         case "weekly":
@@ -142,7 +151,7 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
           currentDt = currentDt.plus({ months: 1 });
           break;
         default:
-          currentDt = endDt.plus({ days: 1 }); // Break loop
+          currentDt = endDt.plus({ days: 1 });
       }
     }
 
@@ -410,7 +419,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
       (b) =>
         b.date === todayStr &&
         currentMinutes >= b.startTime &&
-        currentMinutes <= b.startTime + b.duration
+        currentMinutes <= b.startTime + b.duration,
     );
 
     const bookedRoomIds = activeBookings.map((b) => b.roomId);
@@ -436,7 +445,7 @@ app.get("/api/dashboard/stats", async (req, res) => {
     // 3. Calculate 7-Day Trend (VN timezone safe)
     const d = DateTime.now().setZone("Asia/Ho_Chi_Minh");
     const last7Days = Array.from({ length: 7 }, (_, idx) =>
-      d.minus({ days: 6 - idx }).toISODate()
+      d.minus({ days: 6 - idx }).toISODate(),
     );
 
     const trendData = last7Days.map((dateStr) => {

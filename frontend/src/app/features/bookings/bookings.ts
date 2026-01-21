@@ -57,7 +57,7 @@ export class Bookings {
     guestCount: number;
     creatorEmail: string;
     phone: string;
-    recurrenceType: 'none' | 'daily' | 'weekly' | 'monthly';
+    recurrenceType: 'none' | 'daily' | 'workdays' | 'weekly' | 'monthly';
     recurrenceEndDate: string;
   }>({
     startTime: '',
