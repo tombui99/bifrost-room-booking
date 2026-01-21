@@ -3,6 +3,7 @@ const cors = require("cors");
 const admin = require("firebase-admin");
 const dotenv = require("dotenv");
 const { DateTime } = require("luxon");
+const { v4: uuidv4 } = require("uuid");
 
 dotenv.config();
 
@@ -104,82 +105,129 @@ app.get("/api/bookings", async (req, res) => {
 // 6. CREATE BOOKING
 app.post("/api/bookings", verifyToken, async (req, res) => {
   try {
-    const { roomId, date, startTime, duration } = req.body;
+    // recurrence: { type: 'none' | 'daily' | 'weekly' | 'monthly', endDate: 'YYYY-MM-DD' }
+    const { roomId, date, startTime, duration, recurrence } = req.body;
 
     if (!roomId || !date || startTime == null || !duration) {
       return res.status(400).json({ message: "Invalid booking data" });
     }
 
-    // --- PAST DATE VALIDATION WITH LUXON ---
-    // 1. Get current time in VN
-    const now = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    // 1. GENERATE DATES
+    const datesToBook = [];
+    const startDt = DateTime.fromISO(date); // Start Date
 
-    // 2. Convert total minutes to Hours and Minutes
-    // Example: 540 minutes -> hour: 9, minute: 0
-    const startMins = Number(startTime);
-    const hours = Math.floor(startMins / 60);
-    const minutes = startMins % 60;
+    // Default to just today if no recurrence
+    let currentDt = startDt;
+    let endDt = startDt;
 
-    // 3. Create the booking DateTime object
-    const bookingDateTime = DateTime.fromISO(date, {
-      zone: "Asia/Ho_Chi_Minh",
-    }).set({
-      hour: hours,
-      minute: minutes,
-      second: 0,
-      millisecond: 0,
-    });
-
-    // 4. Comparison Check (allow slight grace period of 1 minutes in the past)
-    const graceMinutes = 1;
-    if (
-      bookingDateTime.toMillis() <
-      now.minus({ minutes: graceMinutes }).toMillis()
-    ) {
-      return res.status(400).json({
-        message: "Không thể đặt lịch cho thời gian trong quá khứ",
-        details: {
-          now: now.toFormat("HH:mm dd/MM/yyyy"),
-          requested: bookingDateTime.toFormat("HH:mm dd/MM/yyyy"),
-        },
-      });
+    // If recurrence exists, parse the end date
+    if (recurrence && recurrence.type !== "none" && recurrence.endDate) {
+      endDt = DateTime.fromISO(recurrence.endDate);
     }
 
+    // Loop to generate dates
+    while (currentDt <= endDt) {
+      datesToBook.push(currentDt.toISODate());
+
+      if (!recurrence || recurrence.type === "none") break;
+
+      switch (recurrence.type) {
+        case "daily":
+          currentDt = currentDt.plus({ days: 1 });
+          break;
+        case "weekly":
+          currentDt = currentDt.plus({ weeks: 1 });
+          break;
+        case "monthly":
+          currentDt = currentDt.plus({ months: 1 });
+          break;
+        default:
+          currentDt = endDt.plus({ days: 1 }); // Break loop
+      }
+    }
+
+    // Limit recurrence to reasonable amount (e.g., 50 bookings max) to prevent abuse
+    if (datesToBook.length > 50) {
+      return res
+        .status(400)
+        .json({ message: "Recurrence limit exceeded (max 50 instances)" });
+    }
+
+    // 2. VALIDATION & CONFLICT CHECK (For ALL dates)
+    const now = DateTime.now().setZone("Asia/Ho_Chi_Minh");
     const newStart = startTime;
     const newEnd = startTime + duration;
 
-    // Get all bookings for the same room & date
-    const snapshot = await db
-      .collection("bookings")
-      .where("roomId", "==", roomId)
-      .where("date", "==", date)
-      .get();
+    // We'll use a batch for atomic writes
+    const batch = db.batch();
+    const newBookingsData = [];
+    const groupId = datesToBook.length > 1 ? uuidv4() : null; // Common ID for series
 
-    // Check overlap
-    const hasConflict = snapshot.docs.some((doc) => {
-      const b = doc.data();
-      const existingStart = b.startTime;
-      const existingEnd = b.startTime + b.duration;
+    for (const bookingDate of datesToBook) {
+      // A. Past Time Check
+      const startMins = Number(startTime);
+      const hours = Math.floor(startMins / 60);
+      const minutes = startMins % 60;
 
-      return existingStart < newEnd && existingEnd > newStart;
-    });
+      const bookingDateTime = DateTime.fromISO(bookingDate, {
+        zone: "Asia/Ho_Chi_Minh",
+      }).set({ hour: hours, minute: minutes });
 
-    if (hasConflict) {
-      return res.status(409).json({
-        message: "Khung thời gian này bị trùng với một lịch đặt khác",
+      if (bookingDateTime.toMillis() < now.minus({ minutes: 1 }).toMillis()) {
+        // Skip past dates in a series, or fail?
+        // Usually better to fail if the *first* date is past, but skip others?
+        // Let's fail for consistency with original logic.
+        return res.status(400).json({
+          message: `Không thể đặt lịch quá khứ: ${bookingDate}`,
+        });
+      }
+
+      // B. Conflict Check (Query Firestore)
+      const snapshot = await db
+        .collection("bookings")
+        .where("roomId", "==", roomId)
+        .where("date", "==", bookingDate) // Check specific date
+        .get();
+
+      const hasConflict = snapshot.docs.some((doc) => {
+        const b = doc.data();
+        return b.startTime < newEnd && b.startTime + b.duration > newStart;
       });
+
+      if (hasConflict) {
+        return res.status(409).json({
+          message: `Xung đột lịch vào ngày ${bookingDate}. Vui lòng kiểm tra lại.`,
+        });
+      }
+
+      // Prepare Data
+      const docRef = db.collection("bookings").doc();
+      const bookingData = {
+        ...req.body,
+        date: bookingDate, // Override the single date
+        type: "busy",
+        createdBy: req.user.uid,
+        creatorEmail: req.user.email,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        groupId: groupId, // Link them together
+        recurrenceType: recurrence?.type || "none",
+      };
+
+      // Remove the raw recurrence obj from DB data to keep it clean
+      delete bookingData.recurrence;
+
+      batch.set(docRef, bookingData);
+      newBookingsData.push({ id: docRef.id, ...bookingData });
     }
 
-    const newBooking = {
-      ...req.body,
-      type: "busy",
-      createdBy: req.user.uid,
-      creatorEmail: req.user.email,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    };
+    // 3. COMMIT BATCH
+    await batch.commit();
 
-    const docRef = await db.collection("bookings").add(newBooking);
-    res.status(201).json({ id: docRef.id, ...newBooking });
+    res.status(201).json({
+      message: "Bookings created successfully",
+      count: newBookingsData.length,
+      bookings: newBookingsData,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -273,6 +321,51 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
 
     await docRef.delete();
     res.json({ message: "Deleted" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 8b. DELETE RECURRING SERIES
+app.delete("/api/bookings/series/:groupId", verifyToken, async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    if (!groupId || groupId === "null") {
+      return res.status(400).json({ message: "Invalid Group ID" });
+    }
+
+    // 1. Find all bookings in this series
+    const snapshot = await db
+      .collection("bookings")
+      .where("groupId", "==", groupId)
+      .get();
+
+    if (snapshot.empty) {
+      return res
+        .status(404)
+        .json({ message: "No bookings found for this series" });
+    }
+
+    // 2. Authorization Check (Check the first one for ownership/admin)
+    const firstDoc = snapshot.docs[0].data();
+    const adminDoc = await db.collection("admins").doc(req.user.email).get();
+    const isAdmin = adminDoc.exists;
+    const isCreator = firstDoc.creatorEmail === req.user.email;
+
+    if (!isCreator && !isAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to delete this series" });
+    }
+
+    // 3. Batch Delete
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    res.json({ message: `Deleted ${snapshot.size} recurring bookings` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

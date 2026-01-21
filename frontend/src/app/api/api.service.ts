@@ -87,6 +87,12 @@ export class ApiService {
     return firstValueFrom(this.http.delete(`${this.apiUrl}/bookings/${id}`, options));
   }
 
+  // DELETE: Cancel a series of recurrence
+  async deleteBookingSeries(groupId: string) {
+    const options = await this.getHeaders();
+    return firstValueFrom(this.http.delete(`${this.apiUrl}/bookings/series/${groupId}`, options));
+  }
+
   // ==========================================
   // 3. DASHBOARD STATS
   // ==========================================

@@ -50,12 +50,15 @@ export class Bookings {
   // 'id' tracks whether we are creating (undefined) or updating (string)
   modalData = signal<{
     id?: string;
+    groupId?: string;
     startTime: string;
     endTime: string;
     title: string;
     guestCount: number;
     creatorEmail: string;
     phone: string;
+    recurrenceType: 'none' | 'daily' | 'weekly' | 'monthly';
+    recurrenceEndDate: string;
   }>({
     startTime: '',
     endTime: '',
@@ -63,6 +66,8 @@ export class Bookings {
     guestCount: 1,
     creatorEmail: '',
     phone: '',
+    recurrenceType: 'none',
+    recurrenceEndDate: '',
   });
 
   currentImageIndex = signal<number>(0);
@@ -136,6 +141,8 @@ export class Bookings {
       guestCount: 1,
       creatorEmail: '',
       phone: '',
+      recurrenceType: 'none',
+      recurrenceEndDate: '',
     });
     this.showModal.set(true);
   }
@@ -156,14 +163,35 @@ export class Bookings {
     // Pre-fill data
     this.modalData.set({
       id: b.id,
+      groupId: (b as any).groupId,
       title: b.title,
       guestCount: b.guestCount,
       startTime: this.minutesToTime(b.startTime),
       endTime: this.minutesToTime(b.startTime + b.duration),
       creatorEmail: b.creatorEmail,
       phone: b.phone,
+      recurrenceType: 'none',
+      recurrenceEndDate: '',
     });
     this.showModal.set(true);
+  }
+
+  async deleteSeries() {
+    const groupId = this.modalData().groupId;
+    if (!groupId) return;
+
+    if (!confirm('Bạn có chắc chắn muốn xóa TẤT CẢ các lịch lặp lại trong chuỗi này?')) return;
+
+    try {
+      this.isSaving.set(true);
+      await this.api.deleteBookingSeries(groupId);
+      this.isSaving.set(false);
+      this.closeModal();
+      this.loadBookings();
+    } catch (e: any) {
+      this.isSaving.set(false);
+      alert('Lỗi khi xóa chuỗi lặp lại');
+    }
   }
 
   // 3. SAVE (Create OR Update)
@@ -183,7 +211,12 @@ export class Bookings {
       return alert('Giờ kết thúc không hợp lệ');
     }
 
-    const payload = {
+    // Recurrence Validation
+    if (data.recurrenceType !== 'none' && !data.recurrenceEndDate && !data.id) {
+      return alert('Vui lòng chọn ngày kết thúc lặp lại');
+    }
+
+    const payload: any = {
       roomId: room.id,
       title: data.title,
       date: this.selectedDate(),
@@ -192,6 +225,14 @@ export class Bookings {
       guestCount: data.guestCount,
       phone: data.phone,
     };
+
+    // Add recurrence to payload ONLY on creation
+    if (!data.id && data.recurrenceType !== 'none') {
+      payload.recurrence = {
+        type: data.recurrenceType,
+        endDate: data.recurrenceEndDate,
+      };
+    }
 
     try {
       this.isSaving.set(true);
@@ -291,5 +332,15 @@ export class Bookings {
       .padStart(2, '0');
     const m = (totalMinutes % 60).toString().padStart(2, '0');
     return `${h}:${m}`;
+  }
+  changeDate(offset: number) {
+    const currentDate = new Date(this.selectedDate());
+    currentDate.setDate(currentDate.getDate() + offset);
+
+    // Convert back to YYYY-MM-DD string
+    const newDateStr = currentDate.toISOString().split('T')[0];
+
+    this.selectedDate.set(newDateStr);
+    this.loadBookings();
   }
 }

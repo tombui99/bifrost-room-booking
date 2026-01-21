@@ -8,13 +8,30 @@
 @if (!isLoading() && rooms() && bookings()) {
   <main class="h-screen overflow-hidden relative bg-slate-50 p-6 flex flex-col isolate">
     <div class="flex gap-4 mb-4 md:mb-6 items-center flex-wrap shrink-0">
-      <input
-        type="date"
-        [ngModel]="selectedDate()"
-        (ngModelChange)="onDateChange($event)"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-sm hover:border-emerald-400 transition-colors w-full sm:w-auto"
-      />
+      <div class="flex items-center gap-2 bg-white rounded-lg shadow-sm p-1 border border-gray-300">
+        <button
+          (click)="changeDate(-1)"
+          class="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors"
+          title="Ngày trước"
+        >
+          <i class="fas fa-chevron-left"></i>
+        </button>
 
+        <input
+          type="date"
+          [ngModel]="selectedDate()"
+          (ngModelChange)="onDateChange($event)"
+          class="border-none p-0 text-sm font-bold text-slate-700 outline-none focus:ring-0 cursor-pointer bg-transparent w-[110px] text-center"
+        />
+
+        <button
+          (click)="changeDate(1)"
+          class="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors"
+          title="Ngày sau"
+        >
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
       <select
         [ngModel]="selectedLocation()"
         (ngModelChange)="updateLocation($event)"
@@ -292,6 +309,48 @@
               />
             </div>
           </div>
+          @if (!isEditing()) {
+            <div class="mt-4 border-t border-gray-100 pt-4">
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
+                >Lặp lại (Tùy chọn)</label
+              >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <select
+                    [(ngModel)]="modalData().recurrenceType"
+                    class="w-full border border-slate-300 rounded-xl px-4 py-3 bg-white text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                  >
+                    <option value="none">Không lặp lại</option>
+                    <option value="daily">Hàng ngày</option>
+                    <option value="weekly">Hàng tuần</option>
+                    <option value="monthly">Hàng tháng</option>
+                  </select>
+                </div>
+
+                @if (modalData().recurrenceType !== 'none') {
+                  <div class="animate-fade-in-down">
+                    <input
+                      type="date"
+                      [(ngModel)]="modalData().recurrenceEndDate"
+                      required
+                      #recurrenceEndDate="ngModel"
+                      [min]="selectedDate()"
+                      class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="Đến ngày..."
+                    />
+                    <p class="text-[10px] text-slate-400 mt-1 ml-1">
+                      Chọn ngày kết thúc chuỗi lặp lại
+                    </p>
+                    @if (recurrenceEndDate.errors?.['required']) {
+                      <div class="text-red-500 text-xs mt-1">
+                        <div>Cần ngày kết thúc</div>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Khách</label>
             <div class="flex items-center gap-4">
@@ -326,12 +385,27 @@
           class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-white flex justify-between items-center gap-3 z-20"
         >
           @if (isEditing()) {
-            <button
-              (click)="deleteCurrentBooking()"
-              class="text-red-500 font-bold hover:bg-red-50 px-3 md:px-4 py-3 rounded-xl transition text-sm md:text-base"
-            >
-              <i class="far fa-trash-alt md:mr-2"></i> <span class="hidden md:inline">Xóa</span>
-            </button>
+            <div class="flex gap-2">
+              <button
+                (click)="deleteCurrentBooking()"
+                class="text-red-500 font-bold hover:bg-red-50 px-3 py-3 rounded-xl transition text-sm"
+                title="Chỉ xóa lịch này"
+              >
+                <i class="far fa-trash-alt"></i>
+                <span class="hidden md:inline ml-2">Xóa hiện tại</span>
+              </button>
+
+              @if (modalData().groupId) {
+                <button
+                  (click)="deleteSeries()"
+                  class="bg-red-50 text-red-600 font-bold hover:bg-red-100 px-3 py-3 rounded-xl transition text-sm border border-red-200"
+                  title="Xóa toàn bộ chuỗi lặp lại"
+                >
+                  <i class="fas fa-layer-group"></i>
+                  <span class="hidden md:inline ml-2">Xóa toàn bộ chuỗi</span>
+                </button>
+              }
+            </div>
           } @else {
             <div></div>
           }
@@ -345,7 +419,12 @@
             </button>
             <button
               (click)="confirmBooking()"
-              [disabled]="isSaving() || phone.invalid || !modalData().title.trim()"
+              [disabled]="
+                isSaving() ||
+                phone.invalid ||
+                !modalData().title.trim() ||
+                (!modalData().recurrenceEndDate && modalData().recurrenceType !== 'none')
+              "
               class="flex-[2] md:flex-none bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 disabled:text-white disabled:cursor-not-allowed disabled:shadow-none text-white font-bold py-3 px-4 md:px-8 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm md:text-base active:scale-95 disabled:active:scale-100"
             >
               @if (isSaving()) {
