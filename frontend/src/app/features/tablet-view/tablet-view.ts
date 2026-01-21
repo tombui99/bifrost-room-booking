@@ -384,6 +384,7 @@ export class TabletView implements OnInit, OnDestroy {
   }
 
   // 2. END MEETING
+  // 2. END MEETING
   async endMeeting() {
     const meeting = this.currentMeeting();
     if (!meeting) return;
@@ -392,31 +393,32 @@ export class TabletView implements OnInit, OnDestroy {
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    // Calculate new duration based on how much time has passed since start
-    let newDuration = currentMinutes - meeting.startTime;
-
-    // Safety check: Ensure duration is at least 1 minute (avoids negative or 0 duration)
-    if (newDuration < 1) newDuration = 1;
+    // Calculate how much time has passed since the meeting started
+    const minutesPassed = currentMinutes - meeting.startTime;
 
     try {
-      // FIX: The backend requires roomId, date, and startTime to check for conflicts
-      // even when we are just reducing the duration.
-      const payload = {
-        roomId: meeting.roomId, // REQUIRED by backend
-        date: meeting.date, // REQUIRED by backend
-        startTime: meeting.startTime, // REQUIRED by backend
-        duration: newDuration, // The value we are actually changing
-        title: meeting.title, // Optional: keep original title
-        guestCount: meeting.guestCount, // Optional: keep original count
-      };
+      // If the meeting has been active for less than 1 minute, delete it
+      if (minutesPassed < 1) {
+        await this.api.deleteBooking(meeting.id);
+      } else {
+        // Otherwise, update the duration to end it now
+        const payload = {
+          roomId: meeting.roomId,
+          date: meeting.date,
+          startTime: meeting.startTime,
+          duration: minutesPassed, // Sets duration to the exact amount of time passed
+          title: meeting.title,
+          guestCount: meeting.guestCount,
+        };
 
-      await this.api.updateBooking(meeting.id, payload);
+        await this.api.updateBooking(meeting.id, payload);
+      }
 
       // Reload to reflect changes immediately
       this.loadBookings(this.roomId());
     } catch (e) {
-      console.error('Failed to end meeting:', e);
-      alert('Không thể kết thúc cuộc họp. Vui lòng thử lại.');
+      console.error('Failed to end/delete meeting:', e);
+      alert('Không thể xử lý yêu cầu. Vui lòng thử lại.');
     }
   }
 
