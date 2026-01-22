@@ -244,66 +244,133 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
 // 7. UPDATE BOOKING (Update)
 app.put("/api/bookings/:id", verifyToken, async (req, res) => {
   try {
-    const { roomId, date, startTime, duration, title, guestCount, type } =
-      req.body;
+    const {
+      roomId,
+      date,
+      startTime,
+      duration,
+      title,
+      guestCount,
+      type,
+      phone,
+      updateSeries,
+    } = req.body;
     const bookingId = req.params.id;
 
     const docRef = db.collection("bookings").doc(bookingId);
     const doc = await docRef.get();
 
-    if (!doc.exists)
+    if (!doc.exists) {
       return res.status(404).json({ message: "Booking not found" });
+    }
 
-    // 1. Check if the user is an Admin (document exists in 'admins' collection)
+    const currentBooking = doc.data();
+
+    // 1. Authorization
     const adminDoc = await db.collection("admins").doc(req.user.email).get();
     const isAdmin = adminDoc.exists;
+    const isCreator = currentBooking.creatorEmail === req.user.email;
 
-    // 2. Existing checks
-    const isCreator = doc.data().creatorEmail === req.user.email;
-
-    // 3. Authorization Logic
     if (!isCreator && !isAdmin) {
       return res.status(403).json({ message: "Unauthorized" });
     }
 
-    const newStart = startTime;
-    const newEnd = startTime + duration;
-
-    const snapshot = await db
-      .collection("bookings")
-      .where("roomId", "==", roomId)
-      .where("date", "==", date)
-      .get();
-
-    const hasConflict = snapshot.docs.some((d) => {
-      if (d.id === bookingId) return false;
-
-      const b = d.data();
-      const existingStart = b.startTime;
-      const existingEnd = b.startTime + b.duration;
-
-      return existingStart < newEnd && existingEnd > newStart;
-    });
-
-    if (hasConflict) {
-      return res.status(409).json({
-        message: "Khung thời gian này bị trùng với một lịch đặt khác",
-      });
-    }
-
+    // 2. Prepare Update Payload (Content only)
     const updatePayload = {};
     if (roomId) updatePayload.roomId = roomId;
-    if (date) updatePayload.date = date;
     if (startTime !== undefined) updatePayload.startTime = startTime;
     if (duration !== undefined) updatePayload.duration = duration;
     if (title) updatePayload.title = title;
     if (guestCount) updatePayload.guestCount = guestCount;
     if (type) updatePayload.type = type;
+    if (phone) updatePayload.phone = phone;
 
+    const currentGroupId = currentBooking.groupId;
+
+    // --- PATH 1: UPDATE ENTIRE FUTURE SERIES CONTENT ---
+    if (updateSeries && currentGroupId) {
+      const snapshot = await db
+        .collection("bookings")
+        .where("groupId", "==", currentGroupId)
+        .get();
+
+      const batch = db.batch();
+
+      // Variables for conflict checking
+      const checkStart =
+        startTime !== undefined ? startTime : currentBooking.startTime;
+      const checkDuration =
+        duration !== undefined ? duration : currentBooking.duration;
+      const checkEnd = checkStart + checkDuration;
+      const checkRoom = roomId || currentBooking.roomId;
+
+      // Only update bookings that are today or in the future relative to the edited booking
+      const targetDocs = snapshot.docs.filter(
+        (d) => d.data().date >= currentBooking.date,
+      );
+
+      for (const targetDoc of targetDocs) {
+        const tData = targetDoc.data();
+
+        // Conflict Check for each date in the series
+        const conflictSnap = await db
+          .collection("bookings")
+          .where("roomId", "==", checkRoom)
+          .where("date", "==", tData.date)
+          .get();
+
+        const hasConflict = conflictSnap.docs.some((d) => {
+          if (d.id === targetDoc.id) return false;
+          const b = d.data();
+          return (
+            b.startTime < checkEnd && b.startTime + b.duration > checkStart
+          );
+        });
+
+        if (hasConflict) {
+          return res.status(409).json({
+            message: `Xung đột lịch vào ngày ${tData.date}. Không thể cập nhật chuỗi.`,
+          });
+        }
+
+        batch.update(targetDoc.ref, updatePayload);
+      }
+
+      await batch.commit();
+      return res.json({
+        message: `Đã cập nhật ${targetDocs.length} lịch trong chuỗi.`,
+      });
+    }
+
+    // --- PATH 2: SINGLE UPDATE (Default) ---
+    const checkStart =
+      startTime !== undefined ? startTime : currentBooking.startTime;
+    const checkDuration =
+      duration !== undefined ? duration : currentBooking.duration;
+    const checkEnd = checkStart + checkDuration;
+    const checkDate = date || currentBooking.date;
+    const checkRoom = roomId || currentBooking.roomId;
+
+    const conflictSnap = await db
+      .collection("bookings")
+      .where("roomId", "==", checkRoom)
+      .where("date", "==", checkDate)
+      .get();
+
+    const hasConflict = conflictSnap.docs.some((d) => {
+      if (d.id === bookingId) return false;
+      const b = d.data();
+      return b.startTime < checkEnd && b.startTime + b.duration > checkStart;
+    });
+
+    if (hasConflict) {
+      return res.status(409).json({ message: "Khung thời gian này bị trùng." });
+    }
+
+    if (date) updatePayload.date = date;
     await docRef.update(updatePayload);
 
-    // await docRef.update(req.body);
-    res.json({ message: "Booking updated" });
+    res.json({ message: "Đã cập nhật lịch thành công." });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -335,13 +402,16 @@ app.delete("/api/bookings/:id", verifyToken, async (req, res) => {
   }
 });
 
-// 8b. DELETE RECURRING SERIES
+// 8b. DELETE RECURRING SERIES (Future occurrences only)
 app.delete("/api/bookings/series/:groupId", verifyToken, async (req, res) => {
   try {
     const { groupId } = req.params;
     if (!groupId || groupId === "null") {
       return res.status(400).json({ message: "Invalid Group ID" });
     }
+
+    // Get current date in YYYY-MM-DD format for comparison
+    const today = new Date().toISOString().split("T")[0];
 
     // 1. Find all bookings in this series
     const snapshot = await db
@@ -355,7 +425,7 @@ app.delete("/api/bookings/series/:groupId", verifyToken, async (req, res) => {
         .json({ message: "No bookings found for this series" });
     }
 
-    // 2. Authorization Check (Check the first one for ownership/admin)
+    // 2. Authorization Check
     const firstDoc = snapshot.docs[0].data();
     const adminDoc = await db.collection("admins").doc(req.user.email).get();
     const isAdmin = adminDoc.exists;
@@ -367,14 +437,29 @@ app.delete("/api/bookings/series/:groupId", verifyToken, async (req, res) => {
         .json({ message: "Unauthorized to delete this series" });
     }
 
-    // 3. Batch Delete
+    // 3. Batch Delete ONLY future bookings
     const batch = db.batch();
+    let deletedCount = 0;
+
     snapshot.docs.forEach((doc) => {
-      batch.delete(doc.ref);
+      const bookingData = doc.data();
+      // Only delete if the booking date is today or in the future
+      if (bookingData.date >= today) {
+        batch.delete(doc.ref);
+        deletedCount++;
+      }
     });
 
+    if (deletedCount === 0) {
+      return res
+        .status(200)
+        .json({ message: "No future bookings found to delete." });
+    }
+
     await batch.commit();
-    res.json({ message: `Deleted ${snapshot.size} recurring bookings` });
+    res.json({
+      message: `Deleted ${deletedCount} future recurring bookings. Past bookings were kept.`,
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

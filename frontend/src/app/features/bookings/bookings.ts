@@ -147,7 +147,7 @@ export class Bookings {
     this.showModal.set(true);
   }
 
-  // 2. EDIT BOOKING (Existing Booking)
+  // 2. EDIT BOOKING
   editBooking(b: Booking) {
     if (b.createdBy !== this.currentUser()?.uid && !this.isAdmin()) {
       alert(
@@ -160,7 +160,6 @@ export class Bookings {
     this.selectedRoomId.set(this.rooms().find((r) => r.id === b.roomId)?.name || '');
     this.currentImageIndex.set(0);
 
-    // Pre-fill data
     this.modalData.set({
       id: b.id,
       groupId: (b as any).groupId,
@@ -170,7 +169,8 @@ export class Bookings {
       endTime: this.minutesToTime(b.startTime + b.duration),
       creatorEmail: b.creatorEmail,
       phone: b.phone,
-      recurrenceType: 'none',
+      // Still prefill this so the user knows it IS a recurring booking
+      recurrenceType: (b as any).recurrenceType || 'none',
       recurrenceEndDate: '',
     });
     this.showModal.set(true);
@@ -195,7 +195,7 @@ export class Bookings {
   }
 
   // 3. SAVE (Create OR Update)
-  async confirmBooking() {
+  async confirmBooking(mode: 'single' | 'series' = 'single') {
     const data = this.modalData();
     const room = this.rooms().find((r) => r.name === this.selectedRoomId());
     if (!room) return alert('Vui lòng nhập thông tin phòng');
@@ -203,19 +203,12 @@ export class Bookings {
 
     const [startH, startM] = data.startTime.split(':').map(Number);
     const [endH, endM] = data.endTime.split(':').map(Number);
-
     const startTotalMinutes = startH * 60 + startM;
     const endTotalMinutes = endH * 60 + endM;
 
-    if (startTotalMinutes >= endTotalMinutes) {
-      return alert('Giờ kết thúc không hợp lệ');
-    }
+    if (startTotalMinutes >= endTotalMinutes) return alert('Giờ kết thúc không hợp lệ');
 
-    // Recurrence Validation
-    if (data.recurrenceType !== 'none' && !data.recurrenceEndDate && !data.id) {
-      return alert('Vui lòng chọn ngày kết thúc lặp lại');
-    }
-
+    // Basic Payload
     const payload: any = {
       roomId: room.id,
       title: data.title,
@@ -226,12 +219,21 @@ export class Bookings {
       phone: data.phone,
     };
 
-    // Add recurrence to payload ONLY on creation
-    if (!data.id && data.recurrenceType !== 'none') {
-      payload.recurrence = {
-        type: data.recurrenceType,
-        endDate: data.recurrenceEndDate,
-      };
+    // --- MODE LOGIC ---
+    if (data.id) {
+      // UPDATE MODE
+      payload.updateSeries = mode === 'series';
+      // NOTICE: We specifically DO NOT send the 'recurrence' object here anymore
+      // This prevents the backend from attempting to regenerate the series dates
+    } else {
+      // CREATE MODE
+      if (data.recurrenceType !== 'none') {
+        if (!data.recurrenceEndDate) return alert('Vui lòng chọn ngày kết thúc');
+        payload.recurrence = {
+          type: data.recurrenceType,
+          endDate: data.recurrenceEndDate,
+        };
+      }
     }
 
     try {
@@ -249,7 +251,7 @@ export class Bookings {
     } catch (e: any) {
       console.error(e);
       this.isSaving.set(false);
-      alert(`Lỗi khi lưu: ${e.error.message ?? 'Xem console'}`);
+      alert(`Lỗi khi lưu: ${e.error?.message || e.message}`);
     }
   }
 
