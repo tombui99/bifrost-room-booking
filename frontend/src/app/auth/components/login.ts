@@ -53,7 +53,7 @@ export class Login {
   async loginWithGoogle() {
     await signInWithPopup(this.auth, new GoogleAuthProvider());
 
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/bookings';
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/bookings/daily';
 
     this.router.navigateByUrl(returnUrl);
   }
