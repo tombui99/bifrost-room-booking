@@ -5,7 +5,7 @@ import { Auth, user } from '@angular/fire/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ApiService } from '../../api/api.service';
 import { Booking, Room } from '../../api/models';
-import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminService } from '../../auth/admin.service';
 
 @Component({
@@ -18,7 +18,6 @@ export class WeeklyBookings implements OnInit {
   api = inject(ApiService);
   auth = inject(Auth);
   adminService = inject(AdminService);
-  route = inject(ActivatedRoute);
   router = inject(Router);
 
   currentUser = toSignal(user(this.auth));
@@ -76,8 +75,7 @@ export class WeeklyBookings implements OnInit {
     });
   });
 
-  private queryParams = toSignal(this.route.queryParams);
-  selectedLocation = computed(() => this.queryParams()?.['location'] ?? '');
+  selectedLocation = signal<string>('');
 
   uniqueLocations = computed(() => {
     const locations = this.rooms()
