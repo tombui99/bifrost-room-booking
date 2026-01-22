@@ -5,16 +5,16 @@ import { Auth, user } from '@angular/fire/auth';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminService } from '../../auth/admin.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: 'bookings.html',
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  templateUrl: 'daily-bookings.html',
 })
-export class Bookings {
+export class DailyBookings {
   auth = inject(Auth);
   api = inject(ApiService);
   adminService = inject(AdminService);
@@ -85,6 +85,11 @@ export class Bookings {
   }
 
   constructor() {
+    const dateFromQuery =
+      this.route.snapshot.queryParamMap.get('date') ?? new Date().toISOString().split('T')[0];
+
+    this.selectedDate.set(dateFromQuery);
+
     this.loadRooms();
     this.adminService.checkAdmin();
   }

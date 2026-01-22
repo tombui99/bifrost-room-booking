@@ -41,20 +41,21 @@ import { AdminService } from '../../auth/admin.service';
               <i class="fas fa-chart-line w-5"></i> <span>Dashboard</span>
             </a>
             <a
-              routerLink="/bookings"
+              routerLink="/bookings/daily"
               routerLinkActive="text-orange-500 font-bold"
               class="flex items-center gap-3"
             >
+              <span routerLink="/bookings/weekly" style="display: none;" routerLinkActive></span>
               <i class="fas fa-calendar-alt w-5"></i> <span>Đặt Phòng</span>
             </a>
             @if (adminService.isAdmin$ | async) {
-            <a
-              routerLink="/rooms"
-              routerLinkActive="text-orange-500 font-bold"
-              class="flex items-center gap-3"
-            >
-              <i class="fas fa-building w-5"></i> <span>Quản Lý Phòng</span>
-            </a>
+              <a
+                routerLink="/rooms"
+                routerLinkActive="text-orange-500 font-bold"
+                class="flex items-center gap-3"
+              >
+                <i class="fas fa-building w-5"></i> <span>Quản Lý Phòng</span>
+              </a>
             }
           </div>
         </nav>
@@ -75,22 +76,22 @@ import { AdminService } from '../../auth/admin.service';
           </div>
 
           @if (showProfileMenu()) {
-          <div
-            class="absolute bottom-20 left-4 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-1 z-50 animate-scale-in origin-bottom"
-          >
-            <button
-              class="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 rounded"
+            <div
+              class="absolute bottom-20 left-4 right-4 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-1 z-50 animate-scale-in origin-bottom"
             >
-              Hồ sơ
-            </button>
-            <div class="h-px bg-slate-700 my-1"></div>
-            <button
-              (click)="logout()"
-              class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 rounded"
-            >
-              Đăng xuất
-            </button>
-          </div>
+              <button
+                class="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 rounded"
+              >
+                Hồ sơ
+              </button>
+              <div class="h-px bg-slate-700 my-1"></div>
+              <button
+                (click)="logout()"
+                class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 rounded"
+              >
+                Đăng xuất
+              </button>
+            </div>
           }
         </div>
       </div>
