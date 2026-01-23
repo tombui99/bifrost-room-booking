@@ -80,16 +80,17 @@ type RoomState = 'free' | 'busy';
               </div>
             </div>
 
-            <div class="flex gap-8 text-sm font-medium opacity-60 mt-auto pt-8">
-              <button class="flex items-center gap-2 hover:opacity-100">
-                <i class="fas fa-info-circle"></i> See room info
-              </button>
-              <button class="flex items-center gap-2 hover:opacity-100">
-                <i class="fas fa-exclamation-triangle"></i> Report issue
-              </button>
-              <button class="flex items-center gap-2 hover:opacity-100">
-                <i class="fas fa-map-marker-alt"></i> Find another space
-              </button>
+            <div
+              class="text-sm font-medium mt-auto pt-8 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit"
+            >
+              <img
+                src="/assets/booking-qr.png"
+                alt="Scan to book"
+                class="w-28 h-28 object-contain"
+              />
+              <span class="text-xs text-slate-500 font-medium text-center">
+                Scan để đặt phòng
+              </span>
             </div>
           </div>
 
@@ -127,6 +128,9 @@ type RoomState = 'free' | 'busy';
         >
           <div class="flex justify-between items-start p-12">
             <div>
+              <div class="flex items-center gap-4 mb-6">
+                <div class="font-bold text-2xl tracking-widest opacity-80">BIFROST</div>
+              </div>
               <div class="text-7xl font-light tracking-tighter">
                 {{ currentTime() | date: 'HH:mm' }}
               </div>
@@ -181,6 +185,13 @@ type RoomState = 'free' | 'busy';
                 </div>
               </div>
             }
+          </div>
+
+          <div
+            class="text-sm font-medium mt-auto pt-8 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit mb-6 ml-4"
+          >
+            <img src="/assets/booking-qr.png" alt="Scan to book" class="w-28 h-28 object-contain" />
+            <span class="text-xs text-slate-500 font-medium text-center"> Scan để đặt phòng </span>
           </div>
 
           <div
