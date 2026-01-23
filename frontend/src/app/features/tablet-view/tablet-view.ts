@@ -81,7 +81,7 @@ type RoomState = 'free' | 'busy';
             </div>
 
             <div
-              class="text-sm font-medium mt-auto pt-8 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit"
+              class="text-sm font-medium mt-auto bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit"
             >
               <img
                 src="/assets/booking-qr.png"
@@ -188,7 +188,7 @@ type RoomState = 'free' | 'busy';
           </div>
 
           <div
-            class="text-sm font-medium mt-auto pt-8 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit mb-6 ml-4"
+            class="text-sm font-medium mt-auto bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 w-fit mb-6 ml-4"
           >
             <img src="/assets/booking-qr.png" alt="Scan to book" class="w-28 h-28 object-contain" />
             <span class="text-xs text-slate-500 font-medium text-center"> Scan để đặt phòng </span>

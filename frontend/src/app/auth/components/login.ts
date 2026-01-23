@@ -1,25 +1,83 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
+import {
+  Auth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from '@angular/fire/auth';
 import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="fixed inset-0 z-[100] bg-slate-900 flex items-center justify-center p-4 font-sans">
-      <div
-        class="bg-slate-500 w-full max-w-md rounded-3xl shadow-2xl p-8 text-center animate-scale-in"
-      >
-        <div class="flex justify-center gap-3">
-          <img src="/assets/bifrost-logo.png" alt="Bifrost Logo" class="h-32 object-cover" />
-        </div>
+      <div class="bg-slate-500 w-full max-w-md rounded-3xl shadow-2xl p-8 text-center">
+        <img src="/assets/bifrost-logo.png" class="h-24 mx-auto mb-4" />
+
         <h1 class="text-white text-3xl font-bold mb-2">Bifrost room booking</h1>
-        <p class="text-white mb-8">Đăng nhập để tiếp tục</p>
+        <p class="text-white mb-6">Đăng nhập để tiếp tục</p>
+
+        <!-- Email / Password -->
+        <form class="space-y-4 mb-4" (ngSubmit)="submitEmailPassword()">
+          <input
+            type="email"
+            [(ngModel)]="email"
+            name="email"
+            placeholder="Email"
+            required
+            class="w-full rounded-xl px-4 py-3 text-sm outline-none bg-white"
+          />
+
+          <input
+            type="password"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="Mật khẩu"
+            required
+            class="w-full rounded-xl px-4 py-3 text-sm outline-none bg-white"
+          />
+
+          <button
+            type="submit"
+            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl"
+          >
+            {{ isRegister() ? 'Đăng ký' : 'Đăng nhập' }}
+          </button>
+        </form>
+
+        <!-- Forgot password -->
+        <button
+          *ngIf="!isRegister()"
+          (click)="resetPassword()"
+          class="text-sm text-white underline mb-4"
+        >
+          Quên mật khẩu?
+        </button>
+
+        <!-- Toggle -->
+        <button (click)="toggleMode()" class="text-sm text-white underline block mb-4">
+          {{ isRegister() ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký' }}
+        </button>
+
+        <!-- Messages -->
+        <p *ngIf="message()" class="text-emerald-200 text-sm mb-2">
+          {{ message() }}
+        </p>
+
+        <p *ngIf="error()" class="text-red-200 text-sm mb-4">
+          {{ error() }}
+        </p>
+
+        <!-- Google -->
         <button
           (click)="loginWithGoogle()"
-          class="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-3 transition-all shadow-sm"
+          class="w-full bg-white hover:bg-slate-100 text-slate-700 font-bold py-4 rounded-xl flex items-center justify-center gap-3"
         >
           <svg class="w-6 h-6" viewBox="0 0 24 24">
             <path
@@ -50,11 +108,78 @@ export class Login {
   route = inject(ActivatedRoute);
   router = inject(Router);
 
+  email = '';
+  password = '';
+
+  isRegister = signal(false);
+  error = signal<string | null>(null);
+  message = signal<string | null>(null);
+
   async loginWithGoogle() {
     await signInWithPopup(this.auth, new GoogleAuthProvider());
+    this.redirect();
+  }
 
+  async submitEmailPassword() {
+    this.error.set(null);
+    this.message.set(null);
+
+    try {
+      if (this.isRegister()) {
+        await createUserWithEmailAndPassword(this.auth, this.email, this.password);
+
+        this.message.set('Đăng ký thành công!');
+        this.redirect();
+        return;
+      }
+
+      await signInWithEmailAndPassword(this.auth, this.email, this.password);
+
+      this.redirect();
+    } catch (e: any) {
+      this.error.set(this.mapFirebaseError(e.code));
+    }
+  }
+
+  async resetPassword() {
+    this.error.set(null);
+    this.message.set(null);
+
+    if (!this.email) {
+      this.error.set('Vui lòng nhập email trước.');
+      return;
+    }
+
+    await sendPasswordResetEmail(this.auth, this.email);
+    this.message.set('Email đặt lại mật khẩu đã được gửi.');
+  }
+
+  toggleMode() {
+    this.isRegister.update((v) => !v);
+    this.error.set(null);
+    this.message.set(null);
+  }
+
+  redirect() {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/bookings/daily';
 
     this.router.navigateByUrl(returnUrl);
+  }
+
+  mapFirebaseError(code: string) {
+    switch (code) {
+      case 'auth/user-not-found':
+        return 'Tài khoản không tồn tại';
+      case 'auth/wrong-password':
+        return 'Sai mật khẩu';
+      case 'auth/email-already-in-use':
+        return 'Email đã được sử dụng';
+      case 'auth/weak-password':
+        return 'Mật khẩu quá yếu (tối thiểu 6 ký tự)';
+      case 'auth/invalid-email':
+        return 'Email không hợp lệ';
+      default:
+        return 'Đã xảy ra lỗi, vui lòng thử lại';
+    }
   }
 }
