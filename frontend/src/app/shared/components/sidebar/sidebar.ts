@@ -4,7 +4,7 @@ import { signOut } from 'firebase/auth';
 import { Auth, user } from '@angular/fire/auth';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { AdminService } from '../../auth/admin.service';
+import { AdminService } from '../../../auth/admin.service';
 
 @Component({
   selector: 'app-sidebar',

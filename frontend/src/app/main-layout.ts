@@ -1,6 +1,6 @@
 import { Component, inject, signal, effect, HostListener } from '@angular/core';
 import { RouterOutlet, Router, ActivatedRoute, NavigationEnd } from '@angular/router';
-import { Sidebar } from './features/sidebar/sidebar';
+import { Sidebar } from './shared/components/sidebar/sidebar';
 import { CommonModule } from '@angular/common';
 import { filter, map, startWith } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -12,10 +12,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
   template: `
     <div class="flex h-screen overflow-hidden bg-slate-50 relative">
       @if (isSidebarOpen()) {
-      <div
-        class="fixed inset-0 bg-slate-900/50 z-10 md:hidden"
-        (click)="isSidebarOpen.set(false)"
-      ></div>
+        <div
+          class="fixed inset-0 bg-slate-900/50 z-10 md:hidden"
+          (click)="isSidebarOpen.set(false)"
+        ></div>
       }
 
       <app-sidebar
@@ -60,8 +60,8 @@ export class MainLayoutComponent {
         while (route.firstChild) route = route.firstChild;
         return route.snapshot.title || route.snapshot.data['title'] || 'Dashboard';
       }),
-      startWith('Dashboard')
-    )
+      startWith('Dashboard'),
+    ),
   );
 
   constructor() {

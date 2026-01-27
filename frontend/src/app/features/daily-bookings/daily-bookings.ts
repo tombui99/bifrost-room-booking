@@ -7,11 +7,12 @@ import { Booking, Room } from '../../api/models';
 import { ApiService } from '../../api/api.service';
 import { ActivatedRoute, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AdminService } from '../../auth/admin.service';
+import { BookingModalComponent } from '../../shared/components/booking-modal/booking-modal';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, BookingModalComponent],
   templateUrl: 'daily-bookings.html',
 })
 export class DailyBookings {
@@ -24,8 +25,6 @@ export class DailyBookings {
 
   // UI STATE
   selectedDate = signal<string>(new Date().toISOString().split('T')[0]);
-  isEditing = computed(() => !!this.modalData().id);
-  isSaving = signal(false);
   isLoading = signal(false);
 
   private queryParams = toSignal(this.route.queryParams);
@@ -47,35 +46,10 @@ export class DailyBookings {
 
   // MODAL STATE
   showModal = signal(false);
-  // 'id' tracks whether we are creating (undefined) or updating (string)
-  modalData = signal<{
-    id?: string;
-    groupId?: string;
-    startTime: string;
-    endTime: string;
-    title: string;
-    guestCount: number;
-    creatorEmail: string;
-    phone: string;
-    meetingLink: string;
-    platform: 'generic' | 'google' | 'teams' | 'zoom';
-    recurrenceType: 'none' | 'daily' | 'workdays' | 'weekly' | 'monthly';
-    recurrenceEndDate: string;
-  }>({
-    startTime: '',
-    endTime: '',
-    title: '',
-    guestCount: 1,
-    creatorEmail: '',
-    phone: '',
-    meetingLink: '',
-    platform: 'generic',
-    recurrenceType: 'none',
-    recurrenceEndDate: '',
-  });
 
-  currentImageIndex = signal<number>(0);
-  selectedRoomId = signal('');
+  // Data to pass to the modal
+  selectedBooking = signal<Booking | null>(null);
+  newBookingData = signal<{ date: string; time?: string; roomId?: string } | null>(null);
 
   isAdmin = toSignal(this.adminService.isAdmin$, { initialValue: false });
 
@@ -83,10 +57,6 @@ export class DailyBookings {
   rooms = signal<Room[]>([]);
   bookings = signal<Booking[]>([]);
   timeSlots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-
-  get selectedRoom() {
-    return this.rooms().find((r) => r.name === this.selectedRoomId()) || null;
-  }
 
   constructor() {
     const dateFromQuery =
@@ -112,7 +82,6 @@ export class DailyBookings {
     this.isLoading.set(true);
     try {
       this.rooms.set(await this.api.getRooms());
-      if (this.rooms().length > 0) this.selectedRoomId.set(this.rooms()[0].name);
       await this.loadBookings();
     } catch (e) {
       console.error(e);
@@ -134,26 +103,11 @@ export class DailyBookings {
 
   // 1. OPEN MODAL (New Booking)
   openModal(roomName?: string, time?: string) {
-    if (roomName) {
-      this.selectedRoomId.set(roomName);
-      this.currentImageIndex.set(0);
-    }
-    let start = 9;
-    if (time) start = parseInt(time.split(':')[0]);
-
-    // Reset form, id undefined means "Create Mode"
-    this.modalData.set({
-      id: undefined,
-      title: '',
-      startTime: (start < 10 ? '0' : '') + start + ':00',
-      endTime: (start + 1 < 10 ? '0' : '') + (start + 1) + ':00',
-      guestCount: 1,
-      creatorEmail: '',
-      phone: '',
-      meetingLink: '',
-      platform: 'generic',
-      recurrenceType: 'none',
-      recurrenceEndDate: '',
+    this.selectedBooking.set(null);
+    this.newBookingData.set({
+      date: this.selectedDate(),
+      time: time,
+      roomId: roomName,
     });
     this.showModal.set(true);
   }
@@ -168,120 +122,14 @@ export class DailyBookings {
       );
       return;
     }
-    this.selectedRoomId.set(this.rooms().find((r) => r.id === b.roomId)?.name || '');
-    this.currentImageIndex.set(0);
 
-    this.modalData.set({
-      id: b.id,
-      groupId: (b as any).groupId,
-      title: b.title,
-      guestCount: b.guestCount,
-      startTime: this.minutesToTime(b.startTime),
-      endTime: this.minutesToTime(b.startTime + b.duration),
-      creatorEmail: b.creatorEmail,
-      phone: b.phone,
-      meetingLink: (b as any).meetingLink || '', // Load link
-      platform: (b as any).platform || 'generic', // Load platform
-      recurrenceType: (b as any).recurrenceType || 'none',
-      recurrenceEndDate: '',
-    });
+    this.newBookingData.set(null);
+    this.selectedBooking.set(b);
     this.showModal.set(true);
   }
 
-  async deleteSeries() {
-    const groupId = this.modalData().groupId;
-    if (!groupId) return;
-
-    if (!confirm('Bạn có chắc chắn muốn xóa TẤT CẢ các lịch lặp lại trong chuỗi này?')) return;
-
-    try {
-      this.isSaving.set(true);
-      await this.api.deleteBookingSeries(groupId);
-      this.isSaving.set(false);
-      this.closeModal();
-      this.loadBookings();
-    } catch (e: any) {
-      this.isSaving.set(false);
-      alert('Lỗi khi xóa chuỗi lặp lại');
-    }
-  }
-
-  // 3. SAVE (Create OR Update)
-  async confirmBooking(mode: 'single' | 'series' = 'single') {
-    const data = this.modalData();
-    const room = this.rooms().find((r) => r.name === this.selectedRoomId());
-    if (!room) return alert('Vui lòng nhập thông tin phòng');
-    if (!data.title) return alert('Vui lòng nhập chủ đề');
-
-    const [startH, startM] = data.startTime.split(':').map(Number);
-    const [endH, endM] = data.endTime.split(':').map(Number);
-    const startTotalMinutes = startH * 60 + startM;
-    const endTotalMinutes = endH * 60 + endM;
-
-    if (startTotalMinutes >= endTotalMinutes) return alert('Giờ kết thúc không hợp lệ');
-
-    // Basic Payload
-    const payload: any = {
-      roomId: room.id,
-      title: data.title,
-      date: this.selectedDate(),
-      startTime: startTotalMinutes,
-      duration: endTotalMinutes - startTotalMinutes,
-      guestCount: data.guestCount,
-      phone: data.phone,
-      meetingLink: data.meetingLink, // [New]
-      platform: data.platform, // [New]
-    };
-
-    // --- MODE LOGIC ---
-    if (data.id) {
-      // UPDATE MODE
-      payload.updateSeries = mode === 'series';
-      // NOTICE: We specifically DO NOT send the 'recurrence' object here anymore
-      // This prevents the backend from attempting to regenerate the series dates
-    } else {
-      // CREATE MODE
-      if (data.recurrenceType !== 'none') {
-        if (!data.recurrenceEndDate) return alert('Vui lòng chọn ngày kết thúc');
-        payload.recurrence = {
-          type: data.recurrenceType,
-          endDate: data.recurrenceEndDate,
-        };
-      }
-    }
-
-    try {
-      this.isSaving.set(true);
-      if (data.id) {
-        // UPDATE
-        await this.api.updateBooking(data.id, payload);
-      } else {
-        // CREATE
-        await this.api.createBooking(payload);
-      }
-      this.isSaving.set(false);
-      this.closeModal();
-      this.loadBookings();
-    } catch (e: any) {
-      console.error(e);
-      this.isSaving.set(false);
-      alert(`Lỗi khi lưu: ${e.error?.message || e.message}`);
-    }
-  }
-
-  // 4. DELETE (From Modal)
-  async deleteCurrentBooking() {
-    const id = this.modalData().id;
-    if (!id) return;
-    if (!confirm('Bạn chắc chắn muốn xóa lịch này?')) return;
-    try {
-      await this.api.deleteBooking(id);
-      this.closeModal();
-      this.loadBookings();
-    } catch (e) {
-      console.error(e);
-      alert('Không thể xóa booking');
-    }
+  onBookingSaved() {
+    this.loadBookings();
   }
 
   // --- HELPERS ---
@@ -307,11 +155,6 @@ export class DailyBookings {
     };
   }
 
-  // Set the platform helper (for template usage if needed, though ngModel handles it)
-  setPlatform(p: 'generic' | 'google' | 'teams' | 'zoom') {
-    this.modalData.update((d) => ({ ...d, platform: p }));
-  }
-
   // ... (Rest of existing helpers: isToday, selectDateAndOpen, etc.)
   isToday(dateStr: string) {
     return dateStr === new Date().toISOString().split('T')[0];
@@ -327,20 +170,7 @@ export class DailyBookings {
   closeModal() {
     this.showModal.set(false);
   }
-  nextImage(e: Event) {
-    e.stopPropagation();
-    const imgs = this.selectedRoom?.images || [];
-    if (imgs.length) this.currentImageIndex.update((i) => (i + 1) % imgs.length);
-  }
-  prevImage(e: Event) {
-    e.stopPropagation();
-    const imgs = this.selectedRoom?.images || [];
-    if (imgs.length) this.currentImageIndex.update((i) => (i - 1 + imgs.length) % imgs.length);
-  }
-  updateGuestCount(d: number) {
-    const n = this.modalData().guestCount + d;
-    if (n >= 1) this.modalData.update((v) => ({ ...v, guestCount: n }));
-  }
+
   formatTime(totalMinutes: number): string {
     const h = Math.floor(totalMinutes / 60)
       .toString()
@@ -348,13 +178,7 @@ export class DailyBookings {
     const m = (totalMinutes % 60).toString().padStart(2, '0');
     return `${h}:${m}`;
   }
-  minutesToTime(totalMinutes: number): string {
-    const h = Math.floor(totalMinutes / 60)
-      .toString()
-      .padStart(2, '0');
-    const m = (totalMinutes % 60).toString().padStart(2, '0');
-    return `${h}:${m}`;
-  }
+
   changeDate(offset: number) {
     const currentDate = new Date(this.selectedDate());
     currentDate.setDate(currentDate.getDate() + offset);
@@ -364,22 +188,5 @@ export class DailyBookings {
 
     this.selectedDate.set(newDateStr);
     this.loadBookings();
-  }
-  // Time validation
-  // Returns true if the time is invalid (outside 07:00 - 21:00)
-  isTimeInvalid(time: string | undefined): boolean {
-    if (!time) return true;
-    return time < '07:00' || time > '21:00';
-  }
-
-  // Check if the whole form is invalid for the Save button
-  isTimeRangeInvalid(): boolean {
-    const data = this.modalData();
-    return (
-      !data.title ||
-      this.isTimeInvalid(data.startTime) ||
-      this.isTimeInvalid(data.endTime) ||
-      data.startTime >= data.endTime // End must be after Start
-    );
   }
 }
