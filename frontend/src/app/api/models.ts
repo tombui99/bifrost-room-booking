@@ -21,4 +21,6 @@ export interface Booking {
   createdBy: string;
   creatorEmail: string;
   phone: string;
+  platform: string;
+  meetingLink: string;
 }

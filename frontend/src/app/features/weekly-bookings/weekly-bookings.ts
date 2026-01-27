@@ -47,6 +47,8 @@ export class WeeklyBookings implements OnInit {
     guestCount: number;
     creatorEmail: string;
     phone: string;
+    meetingLink: string;
+    platform: 'generic' | 'google' | 'teams' | 'zoom';
     recurrenceType: 'none' | 'daily' | 'workdays' | 'weekly' | 'monthly';
     recurrenceEndDate: string;
   }>({
@@ -56,6 +58,8 @@ export class WeeklyBookings implements OnInit {
     guestCount: 1,
     creatorEmail: '',
     phone: '',
+    meetingLink: '',
+    platform: 'generic',
     recurrenceType: 'none',
     recurrenceEndDate: '',
   });
@@ -173,6 +177,11 @@ export class WeeklyBookings implements OnInit {
     };
   }
 
+  // Set the platform helper (for template usage if needed, though ngModel handles it)
+  setPlatform(p: 'generic' | 'google' | 'teams' | 'zoom') {
+    this.modalData.update((d) => ({ ...d, platform: p }));
+  }
+
   getRoomName(id: string) {
     return this.rooms().find((r) => r.id === id)?.name || 'Room';
   }
@@ -201,6 +210,8 @@ export class WeeklyBookings implements OnInit {
       guestCount: 1,
       creatorEmail: '',
       phone: '',
+      meetingLink: '',
+      platform: 'generic',
       recurrenceType: 'none',
       recurrenceEndDate: '',
     });
@@ -233,6 +244,8 @@ export class WeeklyBookings implements OnInit {
       endTime: this.minutesToTime(b.startTime + b.duration),
       creatorEmail: b.creatorEmail,
       phone: b.phone,
+      meetingLink: (b as any).meetingLink || '',
+      platform: (b as any).platform || 'generic',
       recurrenceType: (b as any).recurrenceType || 'none',
       recurrenceEndDate: '',
     });
@@ -279,6 +292,8 @@ export class WeeklyBookings implements OnInit {
       duration: endTotalMinutes - startTotalMinutes,
       guestCount: data.guestCount,
       phone: data.phone,
+      meetingLink: data.meetingLink,
+      platform: data.platform,
     };
 
     if (data.id) {

@@ -57,6 +57,8 @@ export class DailyBookings {
     guestCount: number;
     creatorEmail: string;
     phone: string;
+    meetingLink: string;
+    platform: 'generic' | 'google' | 'teams' | 'zoom';
     recurrenceType: 'none' | 'daily' | 'workdays' | 'weekly' | 'monthly';
     recurrenceEndDate: string;
   }>({
@@ -66,6 +68,8 @@ export class DailyBookings {
     guestCount: 1,
     creatorEmail: '',
     phone: '',
+    meetingLink: '',
+    platform: 'generic',
     recurrenceType: 'none',
     recurrenceEndDate: '',
   });
@@ -146,6 +150,8 @@ export class DailyBookings {
       guestCount: 1,
       creatorEmail: '',
       phone: '',
+      meetingLink: '',
+      platform: 'generic',
       recurrenceType: 'none',
       recurrenceEndDate: '',
     });
@@ -174,7 +180,8 @@ export class DailyBookings {
       endTime: this.minutesToTime(b.startTime + b.duration),
       creatorEmail: b.creatorEmail,
       phone: b.phone,
-      // Still prefill this so the user knows it IS a recurring booking
+      meetingLink: (b as any).meetingLink || '', // Load link
+      platform: (b as any).platform || 'generic', // Load platform
       recurrenceType: (b as any).recurrenceType || 'none',
       recurrenceEndDate: '',
     });
@@ -222,6 +229,8 @@ export class DailyBookings {
       duration: endTotalMinutes - startTotalMinutes,
       guestCount: data.guestCount,
       phone: data.phone,
+      meetingLink: data.meetingLink, // [New]
+      platform: data.platform, // [New]
     };
 
     // --- MODE LOGIC ---
@@ -287,7 +296,6 @@ export class DailyBookings {
     // 1. Calculate the raw percentage values
     let left = ((b.startTime - dayStartMinutes) / totalDayMinutes) * 100;
     let width = (b.duration / totalDayMinutes) * 100;
-
     // 2. Define the gap size (0.4% is usually enough for a 2-4px gap)
     const gap = 0.4;
 
@@ -298,6 +306,13 @@ export class DailyBookings {
       width: width - gap,
     };
   }
+
+  // Set the platform helper (for template usage if needed, though ngModel handles it)
+  setPlatform(p: 'generic' | 'google' | 'teams' | 'zoom') {
+    this.modalData.update((d) => ({ ...d, platform: p }));
+  }
+
+  // ... (Rest of existing helpers: isToday, selectDateAndOpen, etc.)
   isToday(dateStr: string) {
     return dateStr === new Date().toISOString().split('T')[0];
   }

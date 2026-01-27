@@ -8,6 +8,7 @@ import { adminGuard } from './auth/admin.guard';
 import { TabletView } from './features/tablet-view/tablet-view';
 import { WeeklyBookings } from './features/weekly-bookings/weekly-bookings';
 import { DailyBookings } from './features/daily-bookings/daily-bookings';
+import { ControlDeck } from './features/control-deck/control-deck';
 
 export const routes: Routes = [
   {
@@ -39,6 +40,11 @@ export const routes: Routes = [
   {
     path: 'tablet/:id',
     component: TabletView,
+    canActivate: [adminGuard],
+  },
+  {
+    path: 'deck/:id',
+    component: ControlDeck,
     canActivate: [adminGuard],
   },
 ];

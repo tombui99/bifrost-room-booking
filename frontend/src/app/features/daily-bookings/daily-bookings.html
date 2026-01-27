@@ -84,19 +84,33 @@
             }
           </div>
         </div>
-
         @for (room of filteredRooms(); track room.id) {
           <div
             class="flex min-w-max border-b border-gray-100 h-24 md:h-28 relative hover:bg-slate-50 transition group"
           >
             <div
-              class="w-24 md:w-56 p-2 md:p-4 border-r border-emerald-500 sticky left-0 z-20 bg-white border-l-4 group-hover:bg-slate-50 transition-colors cursor-pointer flex flex-col justify-center"
-              [routerLink]="['/tablet', room.id]"
+              class="w-24 md:w-56 p-2 md:p-4 border-r border-emerald-500 sticky left-0 z-20 bg-white border-l-4 group-hover:bg-slate-50 transition-colors flex flex-col justify-center gap-2"
             >
               <p class="font-bold text-xs md:text-sm text-slate-800">{{ room.name }}</p>
               <p class="hidden md:block text-xs text-slate-500 mt-1">{{ room.location }}</p>
-            </div>
 
+              <div class="flex gap-2">
+                <button
+                  [routerLink]="['/tablet', room.id]"
+                  class="mt-2 bg-teal-400 hover:bg-teal-500 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
+                >
+                  <i class="fa-solid fa-tablet-screen-button"></i>
+                  Tablet
+                </button>
+                <button
+                  [routerLink]="['/deck', room.id]"
+                  class="mt-2 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
+                >
+                  <i class="fa-solid fa-desktop"></i>
+                  Deck
+                </button>
+              </div>
+            </div>
             <div class="flex relative">
               <div class="flex h-full">
                 @for (h of timeSlots; track h) {
@@ -284,6 +298,77 @@
               </div>
             }
           </div>
+
+          <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
+                >Link Cuộc Họp (Tùy chọn)</label
+              >
+              <div class="flex gap-2">
+                <button
+                  (click)="setPlatform('generic')"
+                  [class]="
+                    modalData().platform === 'generic'
+                      ? 'bg-slate-700 text-white shadow-md'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                  "
+                  class="flex-1 py-2 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1"
+                >
+                  <i class="fas fa-calendar-check text-lg"></i>
+                  <span class="text-[10px]">Khác</span>
+                </button>
+                <button
+                  (click)="setPlatform('google')"
+                  [class]="
+                    modalData().platform === 'google'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                  "
+                  class="flex-1 py-2 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1"
+                >
+                  <i class="fab fa-google text-lg"></i>
+                  <span class="text-[10px]">Meet</span>
+                </button>
+                <button
+                  (click)="setPlatform('teams')"
+                  [class]="
+                    modalData().platform === 'teams'
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                  "
+                  class="flex-1 py-2 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1"
+                >
+                  <i class="fab fa-microsoft text-lg"></i>
+                  <span class="text-[10px]">Teams</span>
+                </button>
+                <button
+                  (click)="setPlatform('zoom')"
+                  [class]="
+                    modalData().platform === 'zoom'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+                  "
+                  class="flex-1 py-2 rounded-lg text-sm font-medium transition-all flex flex-col items-center gap-1"
+                >
+                  <i class="fas fa-video text-lg"></i>
+                  <span class="text-[10px]">Zoom</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
+                >Link Cuộc Họp (Nếu có)</label
+              >
+              <input
+                type="url"
+                [(ngModel)]="modalData().meetingLink"
+                placeholder="https://meet.google.com/..."
+                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none bg-white"
+              />
+            </div>
+          </div>
+
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
               >Điện thoại liên lạc</label
