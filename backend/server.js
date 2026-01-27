@@ -162,75 +162,74 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
         .json({ message: "Recurrence limit exceeded (max 50 instances)" });
     }
 
-    // 2. VALIDATION & CONFLICT CHECK (For ALL dates)
+    // 2. VALIDATION & CONFLICT CHECK (For ALL dates) INSIDE TRANSACTION
     const now = DateTime.now().setZone("Asia/Ho_Chi_Minh");
     const newStart = startTime;
     const newEnd = startTime + duration;
-
-    // We'll use a batch for atomic writes
-    const batch = db.batch();
-    const newBookingsData = [];
     const groupId = datesToBook.length > 1 ? uuidv4() : null; // Common ID for series
 
-    for (const bookingDate of datesToBook) {
-      // A. Past Time Check
-      const startMins = Number(startTime);
-      const hours = Math.floor(startMins / 60);
-      const minutes = startMins % 60;
+    // Transaction Result
+    const newBookingsData = await db.runTransaction(async (t) => {
+      const bookingsToCreate = [];
 
-      const bookingDateTime = DateTime.fromISO(bookingDate, {
-        zone: "Asia/Ho_Chi_Minh",
-      }).set({ hour: hours, minute: minutes });
+      for (const bookingDate of datesToBook) {
+        // A. Past Time Check
+        const startMins = Number(startTime);
+        const hours = Math.floor(startMins / 60);
+        const minutes = startMins % 60;
 
-      if (bookingDateTime.toMillis() < now.minus({ minutes: 1 }).toMillis()) {
-        // Skip past dates in a series, or fail?
-        // Usually better to fail if the *first* date is past, but skip others?
-        // Let's fail for consistency with original logic.
-        return res.status(400).json({
-          message: `Không thể đặt lịch quá khứ: ${bookingDate}`,
+        const bookingDateTime = DateTime.fromISO(bookingDate, {
+          zone: "Asia/Ho_Chi_Minh",
+        }).set({ hour: hours, minute: minutes });
+
+        if (bookingDateTime.toMillis() < now.minus({ minutes: 1 }).toMillis()) {
+          throw new Error(`Cannot book past time: ${bookingDate}`);
+        }
+
+        // B. Conflict Check (Query Firestore)
+        // IMPORTANT: Must verify no overlapping bookings exist for this Room + Date
+        const query = db
+          .collection("bookings")
+          .where("roomId", "==", roomId)
+          .where("date", "==", bookingDate);
+
+        const snapshot = await t.get(query);
+
+        const hasConflict = snapshot.docs.some((doc) => {
+          const b = doc.data();
+          return b.startTime < newEnd && b.startTime + b.duration > newStart;
         });
+
+        if (hasConflict) {
+          throw new Error(`Conflict detected for date: ${bookingDate}`);
+        }
+
+        // Prepare Data
+        const docRef = db.collection("bookings").doc();
+        const bookingData = {
+          ...req.body,
+          date: bookingDate, // Override the single date
+          type: "busy",
+          createdBy: req.user.uid,
+          creatorEmail: req.user.email,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          groupId: groupId, // Link them together
+          recurrenceType: recurrence?.type || "none",
+        };
+
+        // Remove the raw recurrence obj from DB data to keep it clean
+        delete bookingData.recurrence;
+
+        bookingsToCreate.push({ ref: docRef, data: bookingData });
       }
 
-      // B. Conflict Check (Query Firestore)
-      const snapshot = await db
-        .collection("bookings")
-        .where("roomId", "==", roomId)
-        .where("date", "==", bookingDate) // Check specific date
-        .get();
-
-      const hasConflict = snapshot.docs.some((doc) => {
-        const b = doc.data();
-        return b.startTime < newEnd && b.startTime + b.duration > newStart;
+      // If we get here, all checks passed
+      bookingsToCreate.forEach(({ ref, data }) => {
+        t.set(ref, data);
       });
 
-      if (hasConflict) {
-        return res.status(409).json({
-          message: `Xung đột lịch vào ngày ${bookingDate}. Vui lòng kiểm tra lại.`,
-        });
-      }
-
-      // Prepare Data
-      const docRef = db.collection("bookings").doc();
-      const bookingData = {
-        ...req.body,
-        date: bookingDate, // Override the single date
-        type: "busy",
-        createdBy: req.user.uid,
-        creatorEmail: req.user.email,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        groupId: groupId, // Link them together
-        recurrenceType: recurrence?.type || "none",
-      };
-
-      // Remove the raw recurrence obj from DB data to keep it clean
-      delete bookingData.recurrence;
-
-      batch.set(docRef, bookingData);
-      newBookingsData.push({ id: docRef.id, ...bookingData });
-    }
-
-    // 3. COMMIT BATCH
-    await batch.commit();
+      return bookingsToCreate.map((b) => ({ id: b.ref.id, ...b.data }));
+    });
 
     res.status(201).json({
       message: "Bookings created successfully",
@@ -238,6 +237,13 @@ app.post("/api/bookings", verifyToken, async (req, res) => {
       bookings: newBookingsData,
     });
   } catch (error) {
+    // Handle Transaction Errors
+    if (
+      error.message.includes("Conflict") ||
+      error.message.includes("Cannot book past time")
+    ) {
+      return res.status(409).json({ message: error.message });
+    }
     res.status(500).json({ error: error.message });
   }
 });

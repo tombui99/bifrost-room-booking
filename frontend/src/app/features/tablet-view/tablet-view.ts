@@ -12,6 +12,20 @@ type RoomState = 'free' | 'busy';
   imports: [CommonModule, DatePipe],
   template: `
     <div class="relative w-screen h-screen overflow-hidden font-sans text-white select-none">
+      @if (isLoading()) {
+        <div
+          class="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+        >
+          <div
+            class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center animate-bounce-subtle"
+          >
+            <div
+              class="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mb-4"
+            ></div>
+            <div class="text-xl font-bold text-slate-800 tracking-wide">Booking...</div>
+          </div>
+        </div>
+      }
       <div class="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2301&auto=format&fit=crop"
@@ -280,6 +294,7 @@ export class TabletView implements OnInit, OnDestroy {
   currentTime = signal<Date>(new Date());
   events = signal<Booking[]>([]);
   showBookingModal = signal(false);
+  isLoading = signal(false);
 
   // --- COMPUTED STATE ---
   currentMinutes = computed(() => {
@@ -383,6 +398,8 @@ export class TabletView implements OnInit, OnDestroy {
   }
 
   async bookAdHoc(durationMinutes: number) {
+    if (this.isLoading()) return;
+
     const now = new Date();
     const startMinutes = now.getHours() * 60 + now.getMinutes();
 
@@ -398,6 +415,7 @@ export class TabletView implements OnInit, OnDestroy {
       return;
     }
 
+    this.isLoading.set(true);
     const offset = now.getTimezoneOffset() * 60000;
     const dateStr = new Date(now.getTime() - offset).toISOString().slice(0, 10);
 
@@ -412,9 +430,11 @@ export class TabletView implements OnInit, OnDestroy {
         type: 'busy',
       });
       this.closeModal();
-      this.loadBookings(this.roomId());
+      await this.loadBookings(this.roomId());
     } catch (e: any) {
       alert('Booking failed.');
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
