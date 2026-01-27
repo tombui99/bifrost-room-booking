@@ -169,15 +169,6 @@ export class WeeklyBookings implements OnInit {
 
   // 2. EDIT BOOKING
   editBooking(b: Booking) {
-    if (b.createdBy !== this.currentUser()?.uid && !this.isAdmin()) {
-      alert(
-        `📅 Booking Details\n\n` +
-          `📝 Title: ${b.title}\n` +
-          `⏰ Time: ${this.minutesToTime(b.startTime)} – ${this.minutesToTime(b.startTime + b.duration)}`,
-      );
-      return;
-    }
-
     this.newBookingData.set(null);
     this.selectedBooking.set(b);
     this.showModal.set(true);

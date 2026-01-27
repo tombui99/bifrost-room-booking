@@ -115,7 +115,7 @@
                 <!-- Bookings -->
                 @for (b of getPositionedBookings(day); track b.id) {
                   <div
-                    class="absolute rounded-xl p-2 text-white shadow-md border border-white/20 transition-all hover:scale-[1.02] z-20 hover:z-40 cursor-pointer overflow-hidden"
+                    class="absolute rounded-xl p-2 text-white shadow-md border border-white/20 transition-all hover:scale-[1.02] z-20 hover:z-40 cursor-pointer overflow-hidden group/booking"
                     [class]="
                       b.createdBy === currentUser()?.uid
                         ? 'bg-emerald-500'
@@ -127,10 +127,33 @@
                     [style.width]="getBookingStyle(b).width"
                     (click)="$event.stopPropagation(); editBooking(b)"
                   >
-                    <div class="text-[9px] font-black uppercase opacity-70 truncate">
-                      {{ getRoomName(b.roomId) }}
+                    @if (b.duration >= 45) {
+                      <div class="text-[9px] font-black uppercase opacity-70 truncate">
+                        {{ getRoomName(b.roomId) }}
+                      </div>
+                      <div class="text-[11px] font-bold leading-tight truncate">{{ b.title }}</div>
+                    }
+
+                    <!-- Tooltip for Desktop -->
+                    <div
+                      class="hidden group-hover/booking:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg shadow-xl z-50 pointer-events-none"
+                    >
+                      <div
+                        class="font-black uppercase opacity-60 mb-1 border-b border-white/10 pb-1"
+                      >
+                        {{ getRoomName(b.roomId) }}
+                      </div>
+                      <div class="font-bold text-sm mb-1">{{ b.title }}</div>
+                      <div class="flex items-center gap-1 opacity-80">
+                        <i class="far fa-clock"></i>
+                        {{ minutesToTime(b.startTime) }} -
+                        {{ minutesToTime(b.startTime + b.duration) }}
+                      </div>
+                      <!-- Arrow -->
+                      <div
+                        class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800"
+                      ></div>
                     </div>
-                    <div class="text-[11px] font-bold leading-tight">{{ b.title }}</div>
                   </div>
                 }
               </div>

@@ -94,22 +94,24 @@
               <p class="font-bold text-xs md:text-sm text-slate-800">{{ room.name }}</p>
               <p class="hidden md:block text-xs text-slate-500 mt-1">{{ room.location }}</p>
 
-              <div class="flex gap-2">
-                <button
-                  [routerLink]="['/tablet', room.id]"
-                  class="mt-2 bg-teal-400 hover:bg-teal-500 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
-                >
-                  <i class="fa-solid fa-tablet-screen-button"></i>
-                  Tablet
-                </button>
-                <button
-                  [routerLink]="['/deck', room.id]"
-                  class="mt-2 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
-                >
-                  <i class="fa-solid fa-desktop"></i>
-                  Deck
-                </button>
-              </div>
+              @if (isAdmin()) {
+                <div class="flex gap-2">
+                  <button
+                    [routerLink]="['/tablet', room.id]"
+                    class="mt-2 bg-teal-400 hover:bg-teal-500 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
+                  >
+                    <i class="fa-solid fa-tablet-screen-button"></i>
+                    Tablet
+                  </button>
+                  <button
+                    [routerLink]="['/deck', room.id]"
+                    class="mt-2 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] md:text-xs py-1 px-2 rounded transition-colors w-fit cursor-pointer"
+                  >
+                    <i class="fa-solid fa-desktop"></i>
+                    Deck
+                  </button>
+                </div>
+              }
             </div>
             <div class="flex relative">
               <div class="flex h-full">
@@ -138,17 +140,6 @@
                   (click)="$event.stopPropagation(); editBooking(b)"
                 >
                   <p class="leading-tight line-clamp-3 text-wrap break-words">{{ b.title }}</p>
-
-                  <div
-                    class="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 absolute bottom-full left-0 mb-2 w-max max-w-[250px] bg-slate-900/95 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl z-50 pointer-events-none transform -translate-y-1"
-                  >
-                    <div class="flex flex-col gap-0.5">
-                      <span class="text-emerald-400 text-[10px] font-bold uppercase tracking-wider">
-                        {{ formatTime(b.startTime) }} - {{ formatTime(b.startTime + b.duration) }}
-                      </span>
-                      <span class="leading-snug break-words">{{ b.title }}</span>
-                    </div>
-                  </div>
                 </div>
               }
             </div>

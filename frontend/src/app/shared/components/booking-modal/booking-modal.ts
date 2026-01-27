@@ -80,6 +80,11 @@ export class BookingModalComponent {
   });
 
   isEditing = computed(() => !!this.modalData().id);
+  canEdit = computed(() => {
+    const data = this.modalData();
+    if (!data.id) return true; // Creating new booking
+    return data.creatorEmail === this.currentUser?.email || this.isAdmin;
+  });
   selectedRoom = computed(() => this.rooms.find((r) => r.name === this.selectedRoomId()) || null);
   timeSlots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
