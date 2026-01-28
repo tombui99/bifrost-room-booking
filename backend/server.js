@@ -106,7 +106,15 @@ app.get("/api/bookings", async (req, res) => {
 app.post("/api/bookings", verifyToken, async (req, res) => {
   try {
     // recurrence: { type: 'none' | 'daily' | 'weekly' | 'monthly', endDate: 'YYYY-MM-DD' }
-    const { roomId, date, startTime, duration, recurrence } = req.body;
+    const {
+      roomId,
+      date,
+      startTime,
+      duration,
+      recurrence,
+      platform,
+      meetingLink,
+    } = req.body;
 
     if (!roomId || !date || startTime == null || !duration) {
       return res.status(400).json({ message: "Invalid booking data" });
@@ -260,6 +268,8 @@ app.put("/api/bookings/:id", verifyToken, async (req, res) => {
       type,
       phone,
       updateSeries,
+      platform,
+      meetingLink,
     } = req.body;
     const bookingId = req.params.id;
 
@@ -290,6 +300,8 @@ app.put("/api/bookings/:id", verifyToken, async (req, res) => {
     if (guestCount) updatePayload.guestCount = guestCount;
     if (type) updatePayload.type = type;
     if (phone) updatePayload.phone = phone;
+    if (platform) updatePayload.platform = platform;
+    if (meetingLink) updatePayload.meetingLink = meetingLink;
 
     const currentGroupId = currentBooking.groupId;
 

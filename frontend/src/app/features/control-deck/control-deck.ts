@@ -3,15 +3,17 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../api/api.service';
 import { Booking } from '../../api/models';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-control-deck',
   standalone: true,
-  imports: [CommonModule, DatePipe],
+  imports: [CommonModule, DatePipe, FormsModule],
   template: `
     <div
       class="w-screen h-screen bg-slate-900 text-white overflow-hidden font-sans flex select-none"
     >
+      <!-- Left Panel: Controls -->
       <div class="w-1/2 h-full p-10 flex flex-col relative z-10 border-r border-white/5">
         <div
           class="absolute inset-0 bg-gradient-to-br from-orange-900/20 via-slate-900 to-slate-900 -z-10"
@@ -27,34 +29,31 @@ import { Booking } from '../../api/models';
             >
               {{ roomInfo()?.name || 'ROOM' }}
             </span>
-            <span class="opacity-50 text-sm">IP: 10.0.0.5</span>
           </div>
         </div>
 
         <div class="grid grid-cols-3 gap-6 mt-auto mb-8">
+          <!-- New Meeting -->
           <button
             (click)="startAdHocMeeting()"
-            class="aspect-square rounded-3xl bg-gradient-to-br from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 shadow-lg shadow-orange-900/50"
+            class="aspect-square rounded-3xl bg-linear-to-br from-orange-600 to-orange-700 hover:from-orange-500 hover:to-orange-600 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 shadow-lg shadow-orange-900/50"
           >
             <div class="text-3xl"><i class="fas fa-video"></i></div>
             <span class="font-medium text-sm">New Meeting</span>
           </button>
 
+          <!-- Share -->
           <button
-            class="aspect-square rounded-3xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 border border-white/5"
-          >
-            <div class="text-3xl opacity-80"><i class="fas fa-phone-alt"></i></div>
-            <span class="font-medium text-sm">Call</span>
-          </button>
-
-          <button
+            (click)="activeModal.set('share')"
             class="aspect-square rounded-3xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 border border-white/5"
           >
             <div class="text-3xl opacity-80"><i class="fas fa-arrow-up-from-bracket"></i></div>
             <span class="font-medium text-sm">Share</span>
           </button>
 
+          <!-- Join via ID -->
           <button
+            (click)="activeModal.set('join-id')"
             class="aspect-square rounded-3xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 border border-white/5"
           >
             <div
@@ -65,27 +64,27 @@ import { Booking } from '../../api/models';
             <span class="font-medium text-sm">Join via ID</span>
           </button>
 
+          <!-- Invite -->
           <button
+            (click)="activeModal.set('invite')"
             class="aspect-square rounded-3xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 border border-white/5"
           >
             <div class="text-3xl opacity-80"><i class="fas fa-user-plus"></i></div>
             <span class="font-medium text-sm">Invite</span>
           </button>
 
+          <!-- More -->
           <button
+            (click)="activeModal.set('more')"
             class="aspect-square rounded-3xl bg-white/5 hover:bg-white/10 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 border border-white/5"
           >
             <div class="text-3xl opacity-80"><i class="fas fa-ellipsis"></i></div>
             <span class="font-medium text-sm">More</span>
           </button>
         </div>
-
-        <div class="flex items-center gap-3 opacity-40 ml-2">
-          <i class="fas fa-microphone text-lg"></i>
-          <span class="text-sm font-medium">Say "Ok Google, join my meeting"</span>
-        </div>
       </div>
 
+      <!-- Right Panel: Schedule -->
       <div class="w-1/2 h-full bg-slate-950/80 p-8 flex flex-col relative">
         <div class="absolute inset-0 bg-blue-500/5 pointer-events-none"></div>
 
@@ -121,7 +120,7 @@ import { Booking } from '../../api/models';
                       {{ formatTime(meeting.startTime + meeting.duration) }}</span
                     >
                     <span class="w-1 h-1 rounded-full bg-slate-500"></span>
-                    <span>{{ meeting.creatorEmail }}</span>
+                    <span>{{ meeting.creatorEmail || 'Guest' }}</span>
                   </div>
                 </div>
 
@@ -174,11 +173,149 @@ import { Booking } from '../../api/models';
           }
         </div>
       </div>
+
+      <!-- MODALS -->
+      @if (activeModal()) {
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-sm"
+          (click)="activeModal.set('')"
+        >
+          <div
+            class="bg-slate-800 border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl"
+            (click)="$event.stopPropagation()"
+          >
+            <!-- Share Modal -->
+            @if (activeModal() === 'share') {
+              <div class="text-center">
+                <div class="text-5xl text-orange-400 mb-6">
+                  <i class="fas fa-arrow-up-from-bracket"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">Wireless Sharing</h3>
+                <p class="text-slate-300 mb-6">
+                  To share your screen, visit:
+                  <br />
+                  <span class="text-orange-400 font-mono text-xl">share.bifrost.com</span>
+                </p>
+                <div class="bg-white p-4 rounded-2xl inline-block mb-6">
+                  <div
+                    class="w-32 h-32 bg-slate-200 flex items-center justify-center text-slate-400 text-xs"
+                  >
+                    QR CODE HERE
+                  </div>
+                </div>
+                <button
+                  (click)="activeModal.set('')"
+                  class="w-full py-4 bg-slate-700 rounded-xl font-bold"
+                >
+                  Close
+                </button>
+              </div>
+            }
+
+            <!-- Join via ID Modal -->
+            @if (activeModal() === 'join-id') {
+              <div>
+                <h3 class="text-2xl font-bold mb-6">Join with Meeting Link</h3>
+                <input
+                  type="text"
+                  [(ngModel)]="meetingInput"
+                  placeholder="https://zoom.us/j/..."
+                  class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 mb-6 text-white"
+                />
+                <div class="flex gap-4">
+                  <button
+                    (click)="activeModal.set('')"
+                    class="flex-1 py-4 bg-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    (click)="joinViaInput()"
+                    class="flex-1 py-4 bg-orange-600 rounded-xl font-bold"
+                  >
+                    Join
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Invite Modal -->
+            @if (activeModal() === 'invite') {
+              <div>
+                <h3 class="text-2xl font-bold mb-6">Invite Guests</h3>
+                <p class="text-sm text-slate-400 mb-4">Add people to the current meeting</p>
+                <input
+                  type="email"
+                  [(ngModel)]="inviteInput"
+                  placeholder="email@example.com"
+                  class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-3 mb-6 text-white"
+                />
+                <div class="flex gap-4">
+                  <button
+                    (click)="activeModal.set('')"
+                    class="flex-1 py-4 bg-slate-700 rounded-xl font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    (click)="sendInvite()"
+                    [disabled]="!inviteInput"
+                    class="flex-1 py-4 bg-indigo-600 rounded-xl font-bold disabled:opacity-50"
+                  >
+                    Invite
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- More Modal -->
+            @if (activeModal() === 'more') {
+              <div class="space-y-4">
+                <h3 class="text-2xl font-bold mb-6">Room Settings</h3>
+
+                <button
+                  (click)="extendMeeting(15)"
+                  [disabled]="!currentBooking()"
+                  class="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-between px-6 disabled:opacity-30"
+                >
+                  <span>Extend Meeting (15m)</span>
+                  <i class="fas fa-clock"></i>
+                </button>
+
+                <button
+                  (click)="endMeetingEarly()"
+                  [disabled]="!currentBooking()"
+                  class="w-full py-4 bg-red-900/40 hover:bg-red-900/60 text-red-400 rounded-xl font-bold flex items-center justify-between px-6 disabled:opacity-30"
+                >
+                  <span>End Meeting Early</span>
+                  <i class="fas fa-sign-out-alt"></i>
+                </button>
+
+                <hr class="border-white/5 my-2" />
+
+                <button
+                  (click)="refreshSchedule()"
+                  class="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center justify-between px-6"
+                >
+                  <span>Refresh Schedule</span>
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+
+                <button
+                  (click)="activeModal.set('')"
+                  class="w-full py-4 border border-white/10 rounded-xl font-bold mt-4"
+                >
+                  Close
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [
     `
-      /* Scrollbar styling for the right panel */
       .custom-scrollbar::-webkit-scrollbar {
         width: 6px;
       }
@@ -204,6 +341,11 @@ export class ControlDeck implements OnInit, OnDestroy {
   currentTime = signal<Date>(new Date());
   events = signal<Booking[]>([]);
 
+  // Modal states
+  activeModal = signal<string>('');
+  meetingInput = '';
+  inviteInput = '';
+
   private clockInterval: any;
   private refreshInterval: any;
 
@@ -215,11 +357,14 @@ export class ControlDeck implements OnInit, OnDestroy {
 
   upcomingEvents = computed(() => {
     const nowMins = this.currentMinutes();
-    // 1. Filter: Meetings that end in the future
-    // 2. Sort: Earliest first
     return this.events()
       .filter((e) => e.startTime + e.duration > nowMins)
       .sort((a, b) => a.startTime - b.startTime);
+  });
+
+  currentBooking = computed(() => {
+    const now = this.currentMinutes();
+    return this.events().find((e) => e.startTime <= now && e.startTime + e.duration > now);
   });
 
   ngOnInit() {
@@ -244,7 +389,7 @@ export class ControlDeck implements OnInit, OnDestroy {
   async initializeData(id: string) {
     await this.loadRoomInfo(id);
     await this.loadBookings(id);
-    this.refreshInterval = setInterval(() => this.loadBookings(id), 30000);
+    this.refreshInterval = setInterval(() => this.loadBookings(id), 60000);
   }
 
   async loadRoomInfo(id: string) {
@@ -257,7 +402,6 @@ export class ControlDeck implements OnInit, OnDestroy {
 
   async loadBookings(roomId: string) {
     const now = new Date();
-    // Local date string for API query
     const offset = now.getTimezoneOffset() * 60000;
     const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 10);
 
@@ -269,13 +413,7 @@ export class ControlDeck implements OnInit, OnDestroy {
     }
   }
 
-  refresh() {
-    if (this.roomId()) this.loadBookings(this.roomId());
-  }
-
   // --- Helpers ---
-
-  // Check if a meeting is happening right now
   isCurrent(meeting: Booking): boolean {
     const now = this.currentMinutes();
     return meeting.startTime <= now && meeting.startTime + meeting.duration > now;
@@ -288,17 +426,37 @@ export class ControlDeck implements OnInit, OnDestroy {
   }
 
   // --- Actions ---
-
   joinMeeting(meeting: any) {
     if (meeting.meetingLink) {
-      // In a real Kiosk environment, this might trigger a specific app.
-      // For web, we open a new tab.
       window.open(meeting.meetingLink, '_blank');
     }
   }
 
-  startAdHocMeeting() {
-    // Create a 30 min "Instant Meeting" to block the room
+  joinViaInput() {
+    if (this.meetingInput) {
+      window.open(this.meetingInput, '_blank');
+      this.activeModal.set('');
+      this.meetingInput = '';
+    }
+  }
+
+  async sendInvite() {
+    if (!this.inviteInput) return;
+    const current = this.currentBooking();
+    if (!current) return;
+
+    try {
+      // In a real app, this would be an API call to add a guest
+      // For now, we simulate a success message
+      alert(`Invite sent to ${this.inviteInput}`);
+      this.inviteInput = '';
+      this.activeModal.set('');
+    } catch (e) {
+      alert('Failed to send invite');
+    }
+  }
+
+  async startAdHocMeeting() {
     if (!confirm('Start an instant 30-minute meeting?')) return;
 
     const duration = 30;
@@ -307,8 +465,8 @@ export class ControlDeck implements OnInit, OnDestroy {
     const offset = now.getTimezoneOffset() * 60000;
     const dateStr = new Date(now.getTime() - offset).toISOString().slice(0, 10);
 
-    this.api
-      .createBooking({
+    try {
+      await this.api.createBooking({
         roomId: this.roomId(),
         title: 'Instant Meeting',
         date: dateStr,
@@ -317,10 +475,44 @@ export class ControlDeck implements OnInit, OnDestroy {
         guestCount: 1,
         type: 'busy',
         platform: 'generic',
-      })
-      .then(() => {
-        this.refresh();
-      })
-      .catch((e) => alert('Failed to start meeting: ' + e));
+      });
+      await this.loadBookings(this.roomId());
+    } catch (e) {
+      alert('Failed to start meeting: ' + e);
+    }
+  }
+
+  async endMeetingEarly() {
+    const current = this.currentBooking();
+    if (!current || !confirm('End current meeting early?')) return;
+
+    try {
+      await this.api.deleteBooking(current.id);
+      await this.loadBookings(this.roomId());
+      this.activeModal.set('');
+    } catch (e) {
+      alert('Failed to end meeting early');
+    }
+  }
+
+  async extendMeeting(mins: number) {
+    const current = this.currentBooking();
+    if (!current) return;
+
+    try {
+      await this.api.updateBooking(current.id, {
+        ...current,
+        duration: current.duration + mins,
+      });
+      await this.loadBookings(this.roomId());
+      this.activeModal.set('');
+    } catch (e) {
+      alert('Failed to extend meeting: Might be a conflict');
+    }
+  }
+
+  refreshSchedule() {
+    this.loadBookings(this.roomId());
+    this.activeModal.set('');
   }
 }
