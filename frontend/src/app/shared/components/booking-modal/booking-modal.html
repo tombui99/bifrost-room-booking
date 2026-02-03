@@ -134,7 +134,38 @@
             </div>
           }
         </div>
-
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Bắt đầu</label>
+            <input
+              type="time"
+              step="900"
+              [(ngModel)]="modalData().startTime"
+              [disabled]="!canEdit()"
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm disabled:bg-slate-50 disabled:text-slate-500"
+            />
+            @if (isTimeInvalid(modalData().startTime)) {
+              <div class="text-red-500 text-xs mt-1">
+                <div>Thời gian phải từ 7:00 đến 21:00</div>
+              </div>
+            }
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label>
+            <input
+              type="time"
+              step="900"
+              [(ngModel)]="modalData().endTime"
+              [disabled]="!canEdit()"
+              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm disabled:bg-slate-50 disabled:text-slate-500"
+            />
+            @if (isTimeInvalid(modalData().endTime)) {
+              <div class="text-red-500 text-xs mt-1">
+                <div>Thời gian phải từ 7:00 đến 21:00</div>
+              </div>
+            }
+          </div>
+        </div>
         <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
           <div>
             <label class="block text-xs font-bold text-slate-500 uppercase mb-2"
@@ -231,38 +262,6 @@
               }
             </div>
           }
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Bắt đầu</label>
-            <input
-              type="time"
-              step="900"
-              [(ngModel)]="modalData().startTime"
-              [disabled]="!canEdit()"
-              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-            />
-            @if (isTimeInvalid(modalData().startTime)) {
-              <div class="text-red-500 text-xs mt-1">
-                <div>Thời gian phải từ 7:00 đến 21:00</div>
-              </div>
-            }
-          </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Kết thúc</label>
-            <input
-              type="time"
-              step="900"
-              [(ngModel)]="modalData().endTime"
-              [disabled]="!canEdit()"
-              class="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm disabled:bg-slate-50 disabled:text-slate-500"
-            />
-            @if (isTimeInvalid(modalData().endTime)) {
-              <div class="text-red-500 text-xs mt-1">
-                <div>Thời gian phải từ 7:00 đến 21:00</div>
-              </div>
-            }
-          </div>
         </div>
         <div class="pt-4 border-t border-slate-100">
           <label class="block text-xs font-bold text-slate-500 uppercase mb-2">
